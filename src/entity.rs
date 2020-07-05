@@ -1,7 +1,6 @@
-mod Entity {
+mod entity {
     pub struct Entity {
-        id: u32,
-        name: &'a str,
+        name: str,
         color: u32,
     }
 }
