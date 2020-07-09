@@ -5,12 +5,23 @@ pub mod entity {
     pub struct Entity {
         id: u32,
         name: string::String,
+        plasticity: f64,
+        influence: f64,
+        attributes: std::collections::HashMap<string::String, Attribute>;
         color: u32,
     }
 
     impl Entity {
-        pub fn create(id: u32, name: string::String, color: u32) -> Entity {
-            Entity { id, name, color }
+        pub fn new(id: u32,
+                   name: string::String,
+                   plasticity: f64,
+                   influence: f64,
+                   color: u32) -> Entity {
+            Entity { id, name, plasticity, influence, color }
+        }
+
+        pub fn similarity(e1: &Entity, e2: &Entity) -> f64 {
+            0.0
         }
     }
 

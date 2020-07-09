@@ -1,3 +1,5 @@
+mod universe;
+mod attribute;
 mod entity;
 pub use entity::entity::Entity;
 
@@ -6,7 +8,7 @@ fn main() {
     let name = "something".to_string();
     let color = 0xFF0B10;
 
-    let something = Entity::create(id, name, color);
+    let something = Entity::new(id, name, 0.5, 0.5, color);
     println!("Shunyata: influence simulation");
     println!("==============================");
 
