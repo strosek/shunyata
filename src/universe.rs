@@ -1,10 +1,11 @@
-mod entity;
-
 mod universe {
+    use std::vec;
+    use crate::entity::entity::Entity;
+
     pub struct Universe {
         id: u32,
-        state: vec<Entity>,
-        nextState: vec<Entity>,
+        state: vec::Vec<Entity>,
+        next_state: vec::Vec<Entity>,
     }
 
     /* Methods:
@@ -16,30 +17,32 @@ mod universe {
      *   - UpdateRelationships()
      */
     impl Universe {
-        pub fn spawn(&self, &configFile: str) {
+        pub fn spawn(&mut self, config_file: &str) {
             /* - Initialize all entities according to config file.
              * - Populate and replicate until n entities randomly or in a specified proportion.
              * - nextState starts being a copy if current state.
              */
+            self.state = vec::Vec::<Entity>::new();
         }
 
-        fn tick() {
+        fn tick(&self) {
             let mut meets;
-            for entity in self.state {
-                meets = self.getWho();
+            for entity_idx in 0..self.state.len() {
+                meets = self.get_who();
                 for meet in meets {
-                    evaluateInteraction(entity, meets);
+                    self.evaluate_interaction(entity_idx, meet);
                 }
             }
         }
 
-        fn getWho() {
+        fn get_who(&self) -> Vec<usize> {
             /* Get who meets who, according to spacial collisions, randomly or whatever algorithm
              * is implemented.
              */
+            vec![1, 2, 3]
         }
 
-        pub fn evaluateInteraction(&entity: Entity, indexes: vec<u64>) {
+        fn evaluate_interaction(&self, e1_idx: usize, e2_idx: usize) {
             /* Basic interaction algorithm for numeric traits:
              *
              * if e1.a1 == e2.a1

@@ -1,4 +1,4 @@
-mod attribute {
+pub mod attribute {
     // An idea on how to implement behavior for different data types, which are mapped within an
     // Entity struct.
     trait Influence {
@@ -9,7 +9,13 @@ mod attribute {
         fn compare();
     }
 
-    struct Attribute<T> {
+    pub struct Attribute<T> {
         value: T,
+    }
+
+    impl Attribute<T> {
+        pub fn new(&self, value: T) -> Attribute<T> {
+            self.value = value;
+        }
     }
 }
