@@ -1,7 +1,9 @@
 pub mod entity {
     use std::fmt;
     use std::string;
+    use serde::{Serialize, Deserialize};
 
+    #[derive(Serialize, Deserialize, Debug)]
     pub struct Entity {
         id: u32,
         name: string::String,
@@ -20,7 +22,7 @@ pub mod entity {
             Entity { id, name, plasticity, influence, color}
         }
 
-        pub fn similarity(e1: &Entity, e2: &Entity) -> f64 {
+        pub fn similarity(_e1: &Entity, _e2: &Entity) -> f64 {
             0.0
         }
     }
