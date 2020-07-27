@@ -5,11 +5,11 @@ pub mod entity {
 
     #[derive(Serialize, Deserialize, Debug)]
     pub struct Entity {
-        id: u32,
-        name: string::String,
-        plasticity: f64,
-        influence: f64,
-        color: u32,
+        pub id: u32,
+        pub name: string::String,
+        pub plasticity: f64,
+        pub influence: f64,
+        pub color: u32,
     }
 
     impl Entity {
