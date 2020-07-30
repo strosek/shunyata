@@ -1,9 +1,9 @@
-mod universe;
 mod entity;
+mod universe;
 pub use entity::entity::Entity;
-pub use universe::universe::Universe;
-use std::string;
 use serde_json;
+use std::string;
+pub use universe::universe::Universe;
 
 fn main() {
     println!("Shunyata: influence simulation");

@@ -1,11 +1,10 @@
 pub mod universe {
-    use std::vec;
-    use bitvec::prelude::*;
-    use std::string;
     use crate::entity::entity::Entity;
-    use serde::{Serialize, Deserialize};
+    use bitvec::prelude::*;
     use rand::Rng;
-
+    use serde::{Deserialize, Serialize};
+    use std::string;
+    use std::vec;
 
     #[derive(Serialize, Deserialize, Debug)]
     pub struct Universe {
@@ -28,7 +27,12 @@ pub mod universe {
             let state = vec::Vec::<Entity>::new();
             let next_state = vec::Vec::<Entity>::new();
 
-            Universe{id, n_beings, state, next_state}
+            Universe {
+                id,
+                n_beings,
+                state,
+                next_state,
+            }
         }
 
         pub fn spawn(&mut self, _config_file: &str) {
@@ -48,21 +52,21 @@ pub mod universe {
                     "entity".to_string(),
                     plasticity,
                     influence,
-                    color)
-                );
+                    color,
+                ));
 
                 self.next_state.push(Entity::new(
                     i as u32,
                     "entity".to_string(),
                     plasticity,
                     influence,
-                    color)
-                );
+                    color,
+                ));
             }
         }
 
         fn tick(&self) {
-            let mut meets: vec::Vec::<usize>;
+            let mut meets: vec::Vec<usize>;
             for i in 0..self.state.len() {
                 self.evaluate_interaction(&self.get_who());
             }
@@ -86,12 +90,11 @@ pub mod universe {
             meets
         }
 
-        fn evaluate_interaction(&self, meets: &vec::Vec::<usize>) {
+        fn evaluate_interaction(&self, meets: &vec::Vec<usize>) {
             let mut sum = 0;
             for meet in meets {
-                sum += self.state[*meet].color;
+                sum += self.state[meet].color;
             }
         }
     }
 }
-
