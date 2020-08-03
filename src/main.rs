@@ -12,6 +12,5 @@ fn main() {
     let mut universe = Universe::new(string::String::from("somewhere"), 32usize);
     universe.spawn("resources/universe_cfg.json");
     let ser_universe = serde_json::to_string(&universe).unwrap();
-
     println!("{}", ser_universe);
 }

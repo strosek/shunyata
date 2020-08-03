@@ -9,7 +9,7 @@ pub mod entity {
         pub name: string::String,
         pub plasticity: f64,
         pub influence: f64,
-        pub color: u32,
+        pub value: f64,
     }
 
     impl Entity {
@@ -18,14 +18,14 @@ pub mod entity {
             name: string::String,
             plasticity: f64,
             influence: f64,
-            color: u32,
+            value: f64,
         ) -> Entity {
             Entity {
                 id,
                 name,
                 plasticity,
                 influence,
-                color,
+                value,
             }
         }
 
@@ -38,8 +38,8 @@ pub mod entity {
         fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
             write!(
                 f,
-                "(ID: {}, Name: {}, Color: {:X})",
-                self.id, self.name, self.color
+                "(ID: {}, Name: {}, Color: {})",
+                self.id, self.name, self.value
             )
         }
     }
