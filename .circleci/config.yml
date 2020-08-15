@@ -4,5 +4,25 @@ jobs:
     docker:
       - image: circleci/rust:latest
     steps:
-      - checkout # check out the code in the project directory
-      - run: cargo build
+      - checkout
+      - run:
+          name: Build for testing
+          command: cargo build
+
+  test:
+    docker:
+      - image: circleci/rust:latest
+    steps:
+      - checkout
+      - run:
+          name: Test code
+          command: cargo test
+
+  build-release:
+    requires:
+      - test
+    docker:
+      - image: circleci/rust:latest
+    steps:
+      - checkout
+      - run: cargo build --release
