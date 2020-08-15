@@ -3,31 +3,32 @@ pub mod universe {
     use rand::Rng;
     use serde::{Deserialize, Serialize};
     use std::string;
-    use std::vec;
 
     #[derive(Serialize, Deserialize, Debug)]
     pub struct Universe {
         id: string::String,
+        cycles: usize,
         n_beings: usize,
-        state: vec::Vec<Entity>,
+        n_being_attributes: usize,
+        state: Vec<Entity>,
+        success_value: f64,
     }
 
-    /* Methods:
-     *   - Spawn()
-     *   - Anihilate() // Destructor
-     *   - Tick()
-     *   - Save()
-     *   - Interact()
-     *   - UpdateRelationships()
-     */
     impl Universe {
-        pub fn new(id: string::String, n_beings: usize) -> Universe {
-            let state = vec::Vec::<Entity>::new();
+        pub fn new(id: string::String,
+                   cycles: usize,
+                   n_beings: usize,
+                   n_being_attributes: usize,
+                   success_value: f64) -> Universe {
+            let state = Vec::<Entity>::new();
 
             Universe {
                 id,
+                cycles,
                 n_beings,
+                n_being_attributes,
                 state,
+                success_value,
             }
         }
 
@@ -39,24 +40,36 @@ pub mod universe {
             let mut rng = rand::thread_rng();
 
             for i in 0..self.n_beings {
-                let plasticity = rng.gen_range(0.1, 0.9);
-                let influence = rng.gen_range(0.1, 0.9);
-                let value = i as f64;
-                //let.value = rng.gen_range(0x000000, 0xFF);
+                let plasticity = rng.gen_range(0.0, 0.2);
+                let influence = rng.gen_range(0.1, 0.5);
+                let mut attributes = Vec::<f64>::with_capacity(self.n_being_attributes);
+                for _ in 0..self.n_being_attributes {
+                    attributes.push(rng.gen_range(-100.0, 100.0));
+                }
 
                 self.state.push(Entity::new(
                     i as u32,
                     "entity".to_string(),
                     plasticity,
                     influence,
-                    value as f64,
+                    attributes,
                 ));
             }
 
-            // TODO: change this for a loop statement.
-            for _ in 0..100 {
+            self.write_csv_line();
+            for i in 0..self.cycles {
                 self.tick();
+                if i % 2 == 0 {
+                    self.write_csv_line();
+                }
             }
+        }
+
+        fn write_csv_line(&self) {
+            for entity in &self.state {
+                print!("{:?},", entity.attributes);
+            }
+            println!();
         }
 
         fn tick(&mut self) {
@@ -66,8 +79,8 @@ pub mod universe {
             }
         }
 
+        /// Get who interacts with who, randomly.
         fn get_random_interactions(&self) -> Vec<Vec<usize>> {
-            /// Get who interacts with who, randomly.
 
             let mut rng = rand::thread_rng();
             let mut interacted = Vec::<bool>::with_capacity(self.n_beings);
@@ -75,69 +88,91 @@ pub mod universe {
                 interacted.push(false);
             }
 
-            let n_groups = rng.gen_range(2, self.n_beings / 3);
+            let n_groups = rng.gen_range(2, 3);
             let mut groups = Vec::<Vec<usize>>::new();
 
             for _ in 0..n_groups {
-                let n_encounters = rng.gen_range(2, self.n_beings / 5);
+                let n_encounters = rng.gen_range(2, 3);
 
-                let mut encounter = vec::Vec::<usize>::new();
+                let mut encounter = Vec::<usize>::new();
 
                 let mut i_encounters = 0usize;
                 while i_encounters < n_encounters {
                     let entity_index = rng.gen_range(0, self.n_beings);
-                    if ! interacted[entity_index] {
+                    if interacted[entity_index] == false {
                         encounter.push(entity_index);
-                        i_encounters += 1;
+
                         interacted[entity_index] = true;
+                        i_encounters += 1;
                     }
                 }
                 groups.push(encounter);
             }
+            interacted.clear();
 
             groups
         }
 
-        fn evaluate_interaction(&mut self, encounter: &vec::Vec<usize>) {
-            // Calculate average of entities that met.
-            let mut sum = 0.0f64;
-            let mut i = 0usize;
-            for meet in encounter {
-                let entity = &self.state[*meet];
-                sum += entity.value;
-                print!(" Color: {:.2}", entity.value);
-                i += 1usize;
+        pub fn multiply_vector(vector: &Vec<f64>) -> f64 {
+            let mut product = 1.0;
+            for value in vector {
+                product *= value;
             }
-            let average = sum as f64 / i as f64;
+
+            product
+        }
+
+        pub fn sum_vector(vector: &Vec<f64>) -> f64 {
+            let mut sum = 1.0;
+            for value in vector {
+                sum += value;
+            }
+
+            sum
+        }
+
+        fn solution_difference(&self, attributes: &Vec<f64>) -> f64 {
+            let mut difference = 0.0;
+            difference
+        }
+
+        fn evaluate_interaction(&mut self, encounter: &Vec<usize>) {
+            // Calculate average of entities that met.
+            let mut sums = Vec::<f64>::with_capacity(self.n_being_attributes);
+
+            for i in encounter {
+                for j in 0..self.n_being_attributes {
+                    sums.push(0.0);
+                    sums[j] += self.state[*i].attributes[j];
+                }
+            }
+
+            let mut averages = Vec::<f64>::with_capacity(self.n_being_attributes);
+            for i in 0..self.n_being_attributes {
+                averages.push(sums[i] / self.n_beings as f64);
+            }
 
             // Calculate target value according to each entity's influence factor.
-            let mut target = average;
-            for meet in encounter {
-                let entity = &self.state[*meet];
+            let mut targets = Vec::<f64>::with_capacity(self.n_being_attributes);
+            for i in encounter {
+                for j in 0..self.n_being_attributes {
+                    let with_influence = 0.0;
+                    if self.solution_difference(&self.state[*i].attributes) < self.solution_difference(&averages) {
 
-                // Make target more similar to entities with their influence values.
-                if entity.value < average {
-                    target -= (average - entity.value) * entity.influence;
-                }
-                else if entity.value > average {
-                    target += (entity.value - average) * entity.influence;
+                    }
+                    if self.state[*i].attributes[j] > targets[j] {
+
+                    }
+                    else if self.state[*i].attributes[j] < targets[j] {
+
+                    }
+                    targets.push(with_influence);
                 }
             }
+
+            // Make target more similar to entities with their influence values and fitness.
 
             // Make entities similar to target.
-            for meet in encounter {
-                let entity = &self.state[*meet];
-                // Make target more similar to entities with their influence values.
-                if entity.value < target {
-                    self.state[*meet].value += (target - entity.value) / 2.0f64;
-                }
-                else if entity.value > target {
-                    self.state[*meet].value -= (entity.value- target) / 2.0f64;
-                }
-            }
-            print!("\n");
-            println!("  Average: {:.2}", average);
-            println!("  Target: {:.2}", target);
         }
     }
 }
