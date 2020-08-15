@@ -10,8 +10,6 @@ jobs:
           command: cargo build
 
   test:
-    requires:
-      - build
     docker:
       - image: circleci/rust:latest
     steps:
