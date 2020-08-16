@@ -18,9 +18,20 @@ jobs:
           name: Test code
           command: cargo test
 
-  build-release:
+  release:
     docker:
       - image: circleci/rust:latest
     steps:
       - checkout
       - run: cargo build --release
+
+workflows:
+  build-test-release:
+    jobs:
+      - build
+      - test:
+          requires:
+            - build
+      - release:
+          requires:
+            - test
