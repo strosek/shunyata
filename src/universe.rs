@@ -14,6 +14,24 @@ pub mod universe {
         success_value: f64,
     }
 
+    fn multiply_vector(vector: &Vec<f64>) -> f64 {
+        let mut product = 1.0;
+        for value in vector {
+            product *= value;
+        }
+
+        product
+    }
+
+    fn sum_vector(vector: &Vec<f64>) -> f64 {
+        let mut sum = 1.0;
+        for value in vector {
+            sum += value;
+        }
+
+        sum
+    }
+
     impl Universe {
         pub fn new(id: string::String,
                    cycles: usize,
@@ -67,7 +85,7 @@ pub mod universe {
 
         fn write_csv_line(&self) {
             for entity in &self.state {
-                print!("{:?},", entity.attributes);
+                print!("{} - {:?},", sum_vector(&entity.attributes), entity.attributes);
             }
             println!();
         }
@@ -113,27 +131,17 @@ pub mod universe {
             groups
         }
 
-        pub fn multiply_vector(vector: &Vec<f64>) -> f64 {
-            let mut product = 1.0;
-            for value in vector {
-                product *= value;
-            }
-
-            product
-        }
-
-        pub fn sum_vector(vector: &Vec<f64>) -> f64 {
-            let mut sum = 1.0;
-            for value in vector {
-                sum += value;
-            }
-
-            sum
-        }
 
         fn solution_difference(&self, attributes: &Vec<f64>) -> f64 {
-            let mut difference = 0.0;
-            difference
+            let mut difference = 0.0f64;
+            let attributes_product = multiply_vector(attributes);
+            if self.success_value > attributes_product {
+                difference = self.success_value - attributes_product;
+            }
+            else if self.success_value < attributes_product {
+                difference = attributes_product - self.success_value;
+            }
+            difference.abs()
         }
 
         fn evaluate_interaction(&mut self, encounter: &Vec<usize>) {
