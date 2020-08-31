@@ -14,19 +14,19 @@ pub mod universe {
         success_value: f64,
     }
 
-    fn multiply_vector(vector: &Vec<f64>) -> f64 {
+    pub fn multiply_vector(vector: &Vec<f64>) -> f64 {
         let mut product = 1.0;
         for value in vector {
-            product *= value;
+            product *= *value;
         }
 
         product
     }
 
-    fn sum_vector(vector: &Vec<f64>) -> f64 {
-        let mut sum = 1.0;
+    pub fn sum_vector(vector: &Vec<f64>) -> f64 {
+        let mut sum = 0.0;
         for value in vector {
-            sum += value;
+            sum += *value;
         }
 
         sum
@@ -191,9 +191,15 @@ mod tests {
 
     #[test]
     fn test_sum_vector() {
-        let v1 = vec![1.0, 2.0];
-        let v2 = vec![2.0, 3.0];
+        let v1 = vec![1.0, 2.0, 3.0, 4.0];
 
-        assert_eq!([3.0, 5.0], sum_vector(v1, v2));
+        assert_eq!(10.0, sum_vector(&v1));
+    }
+
+    #[test]
+    fn test_multiply_vector() {
+        let v1 = vec![1.0, 2.0, 3.0, 4.0];
+
+        assert_eq!(24.0, multiply_vector(&v1));
     }
 }
