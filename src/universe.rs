@@ -184,3 +184,16 @@ pub mod universe {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::universe::universe::*;
+
+    #[test]
+    fn test_sum_vector() {
+        let v1 = vec![1.0, 2.0];
+        let v2 = vec![2.0, 3.0];
+
+        assert_eq!([3.0, 5.0], sum_vector(v1, v2));
+    }
+}

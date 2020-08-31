@@ -44,3 +44,21 @@ pub mod entity {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::Entity;
+
+    #[test]
+    fn test_new() {
+        let entity = Entity::new(
+            12u32,
+            "Hello".to_string(),
+            1.2,
+            2.3,
+            Vec::<f64>::new()
+        );
+
+        assert_ne!(entity.to_string(), "".to_string());
+    }
+}
