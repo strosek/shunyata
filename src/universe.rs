@@ -146,18 +146,20 @@ pub mod universe {
 
         fn evaluate_interaction(&mut self, encounter: &Vec<usize>) {
             // Calculate average of entities that met.
-            let mut sums = Vec::<f64>::with_capacity(self.n_being_attributes);
+            let mut averages = Vec::<f64>::with_capacity(self.n_being_attributes);
 
-            for i in encounter {
-                for j in 0..self.n_being_attributes {
-                    sums.push(0.0);
-                    sums[j] += self.state[*i].attributes[j];
-                }
+            // Build vector for averages.
+            for _ in 0..self.n_being_attributes {
+                averages.push(0.0);
             }
 
-            let mut averages = Vec::<f64>::with_capacity(self.n_being_attributes);
             for i in 0..self.n_being_attributes {
-                averages.push(sums[i] / self.n_beings as f64);
+                for j in encounter {
+                    averages[i] += self.state[*j].attributes[i];
+                    if j == encounter.last().unwrap() {
+                        averages[i] /= encounter.len() as f64;
+                    }
+                }
             }
 
             // Calculate target value according to each entity's influence factor.
