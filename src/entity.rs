@@ -43,6 +43,18 @@ pub mod entity {
             )
         }
     }
+
+    impl std::clone::Clone for Entity {
+        fn clone(&self) -> Self {
+            Entity::new(
+                self.id,
+                self.name.to_string(),
+                self.plasticity,
+                self.influence,
+                self.attributes.to_vec()
+            )
+        }
+    }
 }
 
 #[cfg(test)]
