@@ -11,10 +11,10 @@ fn main() {
 
     let mut universe = Universe::new(
         string::String::from("somewhere"),
-        100usize,
+        10_000_000usize,
         20usize,
-        4,
-        36.0,
+        3,
+        666.0,
     );
     universe.spawn("resources/universe_cfg.json");
 
