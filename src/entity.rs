@@ -2,6 +2,7 @@ pub mod entity {
     use serde::{Deserialize, Serialize};
     use std::fmt;
     use std::string;
+    pub use crate::universe::universe::{sum_vector, multiply_vector, fitness};
 
     #[derive(Serialize, Deserialize, Debug)]
     pub struct Entity {
@@ -38,8 +39,12 @@ pub mod entity {
         fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
             write!(
                 f,
-                "(ID: {}, Name: {}, Attributes: {:?})",
-                self.id, self.name, self.attributes
+                "{:3} - Sum: {:10.2}: Product: {:10.2} Fitness: {:10.4} Values: {:10.4?}",
+                self.id,
+                sum_vector(&self.attributes),
+                multiply_vector(&self.attributes),
+                fitness(&self),
+                self.attributes
             )
         }
     }

@@ -11,7 +11,7 @@ fn main() {
 
     let mut universe = Universe::new(
         string::String::from("somewhere"),
-        10_000_000usize,
+        1_000_000usize,
         20usize,
         3,
         666.0,

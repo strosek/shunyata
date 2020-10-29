@@ -2,7 +2,12 @@ pub mod universe {
     use crate::entity::entity::Entity;
     use rand::Rng;
     use serde::{Deserialize, Serialize};
+
+    use std::fs::OpenOptions;
+    use std::io::prelude::*;
+    use std::path::Path;
     use std::string;
+
 
     #[derive(Serialize, Deserialize, Debug)]
     pub struct Universe {
@@ -12,7 +17,6 @@ pub mod universe {
         n_being_attributes: usize,
         state: Vec<Entity>,
         next_state: Vec<Entity>,
-        success_value: f64,
     }
 
     pub fn multiply_vector(vector: &Vec<f64>) -> f64 {
@@ -33,6 +37,23 @@ pub mod universe {
         sum
     }
 
+    pub fn fitness(entity: &Entity) -> f64 {
+        let fitness = solution_difference(440.0f64, &entity.attributes) * -1.0;
+        fitness
+    }
+
+    pub fn solution_difference(success_value: f64, attributes: &Vec<f64>) -> f64 {
+        let mut difference = 0.0f64;
+        let attributes_product = multiply_vector(attributes);
+        if success_value > attributes_product {
+            difference = success_value - attributes_product;
+        }
+        else if success_value < attributes_product {
+            difference = attributes_product - success_value;
+        }
+        difference.abs()
+    }
+
     impl Universe {
         pub fn new(id: string::String,
                    cycles: usize,
@@ -49,7 +70,6 @@ pub mod universe {
                 n_being_attributes,
                 state,
                 next_state,
-                success_value,
             }
         }
 
@@ -65,7 +85,7 @@ pub mod universe {
                 let influence = rng.gen_range(1.0, 3.0);
                 let mut attributes = Vec::<f64>::with_capacity(self.n_being_attributes);
                 for _ in 0..self.n_being_attributes {
-                    attributes.push((rng.gen_range(0.0, 100.0) as f64).round());
+                    attributes.push(rng.gen_range(0.0, 100.0) as f64);
                 }
 
                 self.state.push(Entity::new(
@@ -81,8 +101,8 @@ pub mod universe {
 
             for i in 0..self.cycles {
                 self.tick();
-                if i % 100_000 == 0 {
-                    //self.write_csv_line();
+                if i % 100_000_usize == 0 {
+                    self.write_csv_line();
                     self.print_state();
                 }
             }
@@ -90,24 +110,27 @@ pub mod universe {
 
         fn print_state(&self) {
             for entity in &self.state {
-                println!(
-                    "{:3} - Sum: {:10.2}: Product: {:10.2} Fitness: {:10.4} Values: {:10.4?}",
-                    entity.id,
-                    sum_vector(&entity.attributes),
-                    multiply_vector(&entity.attributes),
-                    self.fitness(&entity),
-                    entity.attributes
-                );
-
+                println!("{}", entity);
             }
             println!();
         }
 
         fn write_csv_line(&self) {
+            let path = Path::new("shunyata.csv");
+
+            let mut file = OpenOptions::new()
+                .write(true)
+                .append(true)
+                .open(path)
+                .unwrap();
+
+            let mut line = String::new();
             for entity in &self.state {
-                print!("{:.5},", multiply_vector(&entity.attributes));
+                line.push_str(&format!("{:.5},", multiply_vector(&entity.attributes)));
             }
-            println!();
+            line.push_str("\n");
+
+            file.write_all(line.as_bytes());
         }
 
         fn tick(&mut self) {
@@ -152,22 +175,6 @@ pub mod universe {
         }
 
 
-        fn solution_difference(&self, attributes: &Vec<f64>) -> f64 {
-            let mut difference = 0.0f64;
-            let attributes_product = multiply_vector(attributes);
-            if self.success_value > attributes_product {
-                difference = self.success_value - attributes_product;
-            }
-            else if self.success_value < attributes_product {
-                difference = attributes_product - self.success_value;
-            }
-            difference.abs()
-        }
-
-        fn fitness(&self, entity: &Entity) -> f64 {
-            let fitness = self.solution_difference(&entity.attributes) * -1.0;
-            fitness
-        }
 
         fn evaluate_interaction(&mut self, encounter: &Vec<usize>) {
             // Calculate average of entities that met.
@@ -214,13 +221,16 @@ pub mod universe {
                         target.to_vec()
                     );
 
-                    // Make entity more similar only if target is more successful.
-                    if self.fitness(&self.state[*j]) < self.fitness(&target_entity) {
-                        if self.state[*j].attributes[i] < target[i] {
-                            self.next_state[*j].attributes[i] += (target[i] - self.state[*j].attributes[i]) * self.state[*j].plasticity;
-                        } else if self.state[*j].attributes[i] > target[i] {
-                            self.next_state[*j].attributes[i] -= (self.state[*j].attributes[i] - target[i]) * self.state[*j].plasticity;
-                        }
+                    // Make entity more similar. If it's more successful, learn 100%.
+                    let mut plasticity = self.state[*j].plasticity;
+                    if fitness(&self.state[*j]) < fitness(&target_entity) {
+                        plasticity = 1.0f64;
+                    }
+
+                    if self.state[*j].attributes[i] < target[i] {
+                        self.next_state[*j].attributes[i] += (target[i] - self.state[*j].attributes[i]) * plasticity;
+                    } else if self.state[*j].attributes[i] > target[i] {
+                        self.next_state[*j].attributes[i] -= (self.state[*j].attributes[i] - target[i]) * plasticity;
                     }
                 }
             }
