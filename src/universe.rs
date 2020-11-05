@@ -8,6 +8,9 @@ pub mod universe {
     use std::path::Path;
     use std::string;
 
+    const DOMAIN_ATTRIBUTES_LOW: f64 = 0.0;
+    const DOMAIN_ATTRIBUTES_HIGH: f64 = 10.0;
+
 
     #[derive(Serialize, Deserialize, Debug)]
     pub struct Universe {
@@ -38,7 +41,17 @@ pub mod universe {
     }
 
     pub fn fitness(entity: &Entity) -> f64 {
-        let fitness = solution_difference(440.0f64, &entity.attributes) * -1.0;
+        let mut fitness = solution_difference(120.0f64, &entity.attributes) * -1.0f64;
+
+        // Make solution close to pure integers.
+        let attributes_sum = sum_vector(&entity.attributes);
+        fitness -= f64::abs(attributes_sum) - attributes_sum.floor();
+
+        // Consider fitness very close to 0, as solution. Stop learning.
+        if fitness > -0.01f64 {
+            fitness = 1.0f64;
+        }
+
         fitness
     }
 
@@ -58,8 +71,7 @@ pub mod universe {
         pub fn new(id: string::String,
                    cycles: usize,
                    n_beings: usize,
-                   n_being_attributes: usize,
-                   success_value: f64) -> Universe {
+                   n_being_attributes: usize) -> Universe {
             let state = Vec::<Entity>::new();
             let next_state = Vec::<Entity>::new();
 
@@ -81,11 +93,12 @@ pub mod universe {
             let mut rng = rand::thread_rng();
 
             for i in 0..self.n_beings {
-                let plasticity = rng.gen_range(0.0, 0.5);
+                let plasticity = rng.gen_range(0.0, 0.8);
                 let influence = rng.gen_range(1.0, 3.0);
                 let mut attributes = Vec::<f64>::with_capacity(self.n_being_attributes);
                 for _ in 0..self.n_being_attributes {
-                    attributes.push(rng.gen_range(0.0, 100.0) as f64);
+                    attributes.push(rng.gen_range(
+                            DOMAIN_ATTRIBUTES_LOW, DOMAIN_ATTRIBUTES_HIGH).round());
                 }
 
                 self.state.push(Entity::new(
@@ -118,11 +131,23 @@ pub mod universe {
         fn write_csv_line(&self) {
             let path = Path::new("shunyata.csv");
 
-            let mut file = OpenOptions::new()
-                .write(true)
-                .append(true)
-                .open(path)
-                .unwrap();
+            let mut file;
+            if path.exists() {
+                file = OpenOptions::new()
+                    .write(true)
+                    .append(true)
+                    .open(path)
+                    .unwrap();
+            }
+            else {
+                file = OpenOptions::new()
+                    .create(true)
+                    .write(true)
+                    .append(true)
+                    .open(path)
+                    .unwrap();
+            }
+
 
             let mut line = String::new();
             for entity in &self.state {
@@ -137,6 +162,23 @@ pub mod universe {
             let interactions = &self.get_random_interactions();
             for i in 0..interactions.len() {
                 self.evaluate_interaction(&interactions[i]);
+            }
+
+            self.mutate_entities();
+        }
+
+        fn mutate_entities(&mut self) {
+            let mut rng = rand::thread_rng();
+            let n_mutations = rng.gen_range(0, self.n_beings / 10usize);
+            for _ in 0..n_mutations {
+                let entity_idx = rng.gen_range(0, self.n_beings);
+
+                // Stop mutations if solution is reached.
+                if fitness(&self.state[entity_idx]) < 0.0f64 {
+                    let attribute_idx = rng.gen_range(0usize, self.n_being_attributes);
+                    self.next_state[entity_idx].attributes[attribute_idx] +=
+                        rng.gen_range(-0.001f64, 0.001f64);
+                }
             }
         }
 
@@ -153,7 +195,7 @@ pub mod universe {
             let mut groups = Vec::<Vec<usize>>::new();
 
             for _ in 0..n_groups {
-                let n_encounters = rng.gen_range(2, 3);
+                let n_encounters = rng.gen_range(2, 5);
 
                 let mut encounter = Vec::<usize>::new();
 
@@ -214,23 +256,21 @@ pub mod universe {
             for i in 0..self.n_being_attributes {
                 for j in encounter {
                     let target_entity = Entity::new(
-                        99999,
+                        u32::max_value(),
                         "target_entity".to_string(),
                         0.0,
                         0.0,
                         target.to_vec()
                     );
 
-                    // Make entity more similar. If it's more successful, learn 100%.
-                    let mut plasticity = self.state[*j].plasticity;
+                    // Make entity more similar. Only learn if target is more successful.
+                    let plasticity = self.state[*j].plasticity;
                     if fitness(&self.state[*j]) < fitness(&target_entity) {
-                        plasticity = 1.0f64;
-                    }
-
-                    if self.state[*j].attributes[i] < target[i] {
-                        self.next_state[*j].attributes[i] += (target[i] - self.state[*j].attributes[i]) * plasticity;
-                    } else if self.state[*j].attributes[i] > target[i] {
-                        self.next_state[*j].attributes[i] -= (self.state[*j].attributes[i] - target[i]) * plasticity;
+                        if self.state[*j].attributes[i] < target[i] {
+                            self.next_state[*j].attributes[i] += (target[i] - self.state[*j].attributes[i]) * plasticity;
+                        } else if self.state[*j].attributes[i] > target[i] {
+                            self.next_state[*j].attributes[i] -= (self.state[*j].attributes[i] - target[i]) * plasticity;
+                        }
                     }
                 }
             }
