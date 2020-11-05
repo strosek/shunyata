@@ -39,7 +39,7 @@ pub mod entity {
         fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
             write!(
                 f,
-                "{:3} - Sum: {:10.2}: Product: {:10.2} Fitness: {:10.4} Values: {:10.4?}",
+                "{:3} - Sum: {:10.2}: Product: {:10.2} Fitness: {:10.4} Values: {:10.6?}",
                 self.id,
                 sum_vector(&self.attributes),
                 multiply_vector(&self.attributes),
