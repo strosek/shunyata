@@ -11,8 +11,8 @@ pub mod universe {
     use serde::{Deserialize, Serialize};
 
     const CSV_NAME: &str = "shunyata.csv";
-    const DOMAIN_ATTRIBUTES_HIGH: f64 = 360.0;
-    const DOMAIN_ATTRIBUTES_LOW: f64 = -360.0;
+    const DOMAIN_ATTRIBUTES_HIGH: f64 = 1000.0;
+    const DOMAIN_ATTRIBUTES_LOW: f64 = 500.0;
 
     #[derive(Serialize, Deserialize, Debug)]
     pub struct Universe {
@@ -25,13 +25,7 @@ pub mod universe {
     }
 
     pub fn fitness(entity: &Entity) -> f64 {
-        let mut fitness = solution_difference(360.0f64, &entity.attributes) * -1.0f64;
-
-        let favor_integers = false;
-        if favor_integers {
-            let attributes_sum = sum_vector(&entity.attributes);
-            fitness -= attributes_sum.fract().abs();
-        }
+        let mut fitness = solution_difference(1024.0f64, &entity.attributes) * -1.0f64;
 
         // Consider fitness very close to 0 as a sufficiently good solution.
         let success_margin = -0.001f64;
@@ -111,17 +105,30 @@ pub mod universe {
                 self.tick();
 
                 if i % 100_000_usize == 0 {
+                    println!("Tick no: {}", i);
                     self.write_csv_line();
                     self.print_state();
                 }
             }
+            println!("Tick no: {}", self.cycles);
+            self.write_csv_line();
+            self.print_state();
         }
 
         fn print_state(&self) {
+            let mut succeeded = false;
+            let mut successes = 0usize;
             for entity in &self.state {
-                println!("{}", entity);
+                print!("{}", entity);
+                if fitness(&entity) >= 1.0f64 {
+                    println!(" - Succeeded!");
+                    successes += 1usize;
+                }
+                else {
+                    println!();
+                }
             }
-            println!();
+            println!("Successes: {}\n", successes);
         }
 
         fn create_csv(&self) {
@@ -269,6 +276,12 @@ pub mod universe {
                             self.next_state[*j].attributes[i] -=
                                 (self.state[*j].attributes[i] - target[i]) * plasticity;
                         }
+                    }
+
+                    // Round if favoring integers.
+                    let favor_integers = false;
+                    if favor_integers {
+                        self.next_state[*j].attributes[i] = self.next_state[*j].attributes[i].round();
                     }
                 }
             }
