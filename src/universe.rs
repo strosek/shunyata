@@ -1,18 +1,18 @@
 pub mod universe {
     use crate::entity::entity::Entity;
-    use crate::math::math::multiply_vector;
-    use rand::Rng;
-    use serde::{Deserialize, Serialize};
+    use crate::math::math::{multiply_vector, sum_vector};
 
     use std::fs::OpenOptions;
     use std::io::prelude::*;
     use std::path::Path;
     use std::string;
 
+    use rand::Rng;
+    use serde::{Deserialize, Serialize};
+
     const CSV_NAME: &str = "shunyata.csv";
     const DOMAIN_ATTRIBUTES_HIGH: f64 = 360.0;
     const DOMAIN_ATTRIBUTES_LOW: f64 = -360.0;
-
 
     #[derive(Serialize, Deserialize, Debug)]
     pub struct Universe {
@@ -27,12 +27,15 @@ pub mod universe {
     pub fn fitness(entity: &Entity) -> f64 {
         let mut fitness = solution_difference(360.0f64, &entity.attributes) * -1.0f64;
 
-        // Make solution close to pure integers.
-        //let attributes_sum = sum_vector(&entity.attributes);
-        //fitness -= attributes_sum.fract().abs();
+        let favor_integers = false;
+        if favor_integers {
+            let attributes_sum = sum_vector(&entity.attributes);
+            fitness -= attributes_sum.fract().abs();
+        }
 
         // Consider fitness very close to 0 as a sufficiently good solution.
-        if fitness > -0.001f64 {
+        let success_margin = -0.001f64;
+        if fitness > success_margin {
             fitness = 1.0f64;
         }
 
@@ -44,18 +47,19 @@ pub mod universe {
         let attributes_product = multiply_vector(attributes);
         if success_value > attributes_product {
             difference = success_value - attributes_product;
-        }
-        else if success_value < attributes_product {
+        } else if success_value < attributes_product {
             difference = attributes_product - success_value;
         }
         difference.abs()
     }
 
     impl Universe {
-        pub fn new(id: string::String,
-                   cycles: usize,
-                   n_beings: usize,
-                   n_being_attributes: usize) -> Universe {
+        pub fn new(
+            id: string::String,
+            cycles: usize,
+            n_beings: usize,
+            n_being_attributes: usize,
+        ) -> Universe {
             let state = Vec::<Entity>::new();
             let next_state = Vec::<Entity>::new();
 
@@ -82,8 +86,10 @@ pub mod universe {
 
                 let mut attributes = Vec::<f64>::with_capacity(self.n_being_attributes);
                 for _ in 0..self.n_being_attributes {
-                    attributes.push(rng.gen_range(
-                            DOMAIN_ATTRIBUTES_LOW, DOMAIN_ATTRIBUTES_HIGH).round());
+                    attributes.push(
+                        rng.gen_range(DOMAIN_ATTRIBUTES_LOW, DOMAIN_ATTRIBUTES_HIGH)
+                            .round(),
+                    );
                 }
 
                 self.state.push(Entity::new(
@@ -92,7 +98,7 @@ pub mod universe {
                     plasticity,
                     influence,
                     attributes,
-                    0u64
+                    0u64,
                 ));
 
                 // Set state and next_state with the same values.
@@ -138,7 +144,6 @@ pub mod universe {
                 .open(path)
                 .unwrap();
 
-
             let mut line = String::new();
             for entity in &self.state {
                 line.push_str(&format!("{:.5},", multiply_vector(&entity.attributes)));
@@ -176,7 +181,6 @@ pub mod universe {
 
         /// Get who interacts with who, randomly.
         fn get_random_interactions(&mut self) -> Vec<Vec<usize>> {
-
             let mut rng = rand::thread_rng();
             let mut has_interacted = Vec::<bool>::with_capacity(self.n_beings);
             for _ in 0..self.n_beings {
@@ -234,10 +238,11 @@ pub mod universe {
             for i in 0..self.n_being_attributes {
                 for j in encounter {
                     if average[i] < self.state[*j].attributes[i] {
-                        target[i] += (self.state[*j].attributes[i] - average[i]) * self.state[*j].influence;
-                    }
-                    else if average[i] > self.state[*j].attributes[i] {
-                        target[i] -= (average[i] - self.state[*j].attributes[i]) * self.state[*j].influence;
+                        target[i] +=
+                            (self.state[*j].attributes[i] - average[i]) * self.state[*j].influence;
+                    } else if average[i] > self.state[*j].attributes[i] {
+                        target[i] -=
+                            (average[i] - self.state[*j].attributes[i]) * self.state[*j].influence;
                     }
                 }
             }
@@ -251,23 +256,22 @@ pub mod universe {
                         0.0,
                         0.0,
                         target.to_vec(),
-                        0u64
+                        0u64,
                     );
 
                     // Make entity more similar. Only learn if target is more successful.
                     let plasticity = self.state[*j].plasticity;
                     if fitness(&self.state[*j]) < fitness(&target_entity) {
                         if self.state[*j].attributes[i] < target[i] {
-                            self.next_state[*j].attributes[i] += (target[i] - self.state[*j].attributes[i]) * plasticity;
+                            self.next_state[*j].attributes[i] +=
+                                (target[i] - self.state[*j].attributes[i]) * plasticity;
                         } else if self.state[*j].attributes[i] > target[i] {
-                            self.next_state[*j].attributes[i] -= (self.state[*j].attributes[i] - target[i]) * plasticity;
+                            self.next_state[*j].attributes[i] -=
+                                (self.state[*j].attributes[i] - target[i]) * plasticity;
                         }
                     }
-
                 }
             }
-
         }
     }
 }
-

@@ -1,9 +1,9 @@
 pub mod entity {
+    pub use crate::math::math::{multiply_vector, sum_vector};
+    pub use crate::universe::universe::fitness;
     use serde::{Deserialize, Serialize};
     use std::fmt;
     use std::string;
-    pub use crate::universe::universe::{fitness};
-    pub use crate::math::math::{multiply_vector, sum_vector};
 
     #[derive(Serialize, Deserialize, Debug)]
     pub struct Entity {
@@ -11,7 +11,7 @@ pub mod entity {
         pub name: string::String,
         pub plasticity: f64,
         pub influence: f64,
-        pub attributes: Vec::<f64>,
+        pub attributes: Vec<f64>,
         pub n_interactions: u64,
     }
 
@@ -21,7 +21,7 @@ pub mod entity {
             name: string::String,
             plasticity: f64,
             influence: f64,
-            attributes: Vec::<f64>,
+            attributes: Vec<f64>,
             n_interactions: u64,
         ) -> Entity {
             Entity {
@@ -45,7 +45,7 @@ pub mod entity {
         fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
             write!(
                 f,
-                "{:3} - Sum: {:10.2}: Product: {:10.2} Fitness: {:10.4} Values: {:10.6?} - Interactions: {}",
+                "{:3} - Sum: {:6.2}: Product: {:10.4} Fitness: {:10.4} Values: {:10.6?}    Interactions: {}",
                 self.id,
                 sum_vector(&self.attributes),
                 multiply_vector(&self.attributes),
@@ -64,7 +64,7 @@ pub mod entity {
                 self.plasticity,
                 self.influence,
                 self.attributes.to_vec(),
-                self.n_interactions
+                self.n_interactions,
             )
         }
     }
@@ -76,14 +76,7 @@ mod tests {
 
     #[test]
     fn test_new() {
-        let entity = Entity::new(
-            12u32,
-            "Hello".to_string(),
-            0.5,
-            2.3,
-            Vec::<f64>::new(),
-            0
-        );
+        let entity = Entity::new(12u32, "Hello".to_string(), 0.5, 2.3, Vec::<f64>::new(), 0);
 
         assert_ne!(entity.to_string(), "".to_string());
     }

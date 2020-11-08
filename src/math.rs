@@ -18,7 +18,6 @@ pub mod math {
     }
 }
 
-
 #[cfg(test)]
 mod tests {
     use crate::math::math::*;
