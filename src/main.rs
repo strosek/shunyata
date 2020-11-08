@@ -2,23 +2,35 @@ mod entity;
 mod math;
 mod universe;
 
-//use serde_json;
-use std::string;
+use clap::{App, Arg, ArgMatches};
 pub use universe::universe::Universe;
 
+fn get_options() -> ArgMatches {
+    let matches = App::new("Shunyata Simulator")
+        .version("0.1.0")
+        .author("Erick Corona. <edcoronag@gmail.com>")
+        .about("Simulate the influence of entities, or beings, with others. Influence is targeted to solve something.")
+        .arg(Arg::new("config-file")
+            .short('c')
+            .long("config-file")
+            .value_name("FILE")
+            .help_heading(Option::from("Set a custom config file"))
+            .takes_value(true))
+        .get_matches();
+
+    matches
+}
+
 fn main() {
+    let option_matches = get_options();
+
     println!("Shunyata: influence simulation");
     println!("==============================");
 
-    let mut universe = Universe::new(
-        string::String::from("somewhere"),
-        10_000_000usize,
-        50usize,
-        3,
-    );
-    universe.spawn("resources/universe_cfg.json");
+    let mut universe =
+        Universe::from_config(option_matches.value_of("config").unwrap_or("config.json"));
 
-    //let ser_universe = serde_json::to_string(&universe).unwrap();
-    //println!("{}", ser_universe);
+    universe.spawn();
+
     println!("All done!");
 }

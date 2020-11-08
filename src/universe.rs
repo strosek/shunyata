@@ -1,6 +1,6 @@
 pub mod universe {
     use crate::entity::entity::Entity;
-    use crate::math::math::{multiply_vector, sum_vector};
+    use crate::math::math::multiply_vector;
 
     use std::fs::OpenOptions;
     use std::io::prelude::*;
@@ -48,14 +48,13 @@ pub mod universe {
     }
 
     impl Universe {
-        pub fn new(
-            id: string::String,
-            cycles: usize,
-            n_beings: usize,
-            n_being_attributes: usize,
-        ) -> Universe {
+        pub fn new() -> Universe {
             let state = Vec::<Entity>::new();
             let next_state = Vec::<Entity>::new();
+            let id = "somewhere".to_string();
+            let cycles = 1_000_000usize;
+            let n_beings = 50usize;
+            let n_being_attributes = 3usize;
 
             Universe {
                 id,
@@ -67,7 +66,13 @@ pub mod universe {
             }
         }
 
-        pub fn spawn(&mut self, _config_file: &str) {
+        pub fn from_config(config_file: &str) -> Universe {
+            // Load options from csv.
+
+            Universe::new()
+        }
+
+        pub fn spawn(&mut self) {
             /* - Initialize all entities according to config file.
              * - Populate and replicate until n entities randomly or in a specified proportion.
              * - nextState starts being a copy if current state.
@@ -116,15 +121,13 @@ pub mod universe {
         }
 
         fn print_state(&self) {
-            let mut succeeded = false;
             let mut successes = 0usize;
             for entity in &self.state {
                 print!("{}", entity);
                 if fitness(&entity) >= 1.0f64 {
                     println!(" - Succeeded!");
                     successes += 1usize;
-                }
-                else {
+                } else {
                     println!();
                 }
             }
@@ -157,7 +160,7 @@ pub mod universe {
             }
             line.push_str("\n");
 
-            file.write_all(line.as_bytes());
+            file.write_all(line.as_bytes()).unwrap();
         }
 
         fn tick(&mut self) {
@@ -281,7 +284,8 @@ pub mod universe {
                     // Round if favoring integers.
                     let favor_integers = false;
                     if favor_integers {
-                        self.next_state[*j].attributes[i] = self.next_state[*j].attributes[i].round();
+                        self.next_state[*j].attributes[i] =
+                            self.next_state[*j].attributes[i].round();
                     }
                 }
             }
