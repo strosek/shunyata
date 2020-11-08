@@ -11,6 +11,7 @@ pub mod entity {
         pub plasticity: f64,
         pub influence: f64,
         pub attributes: Vec::<f64>,
+        pub n_interactions: u64,
     }
 
     impl Entity {
@@ -20,6 +21,7 @@ pub mod entity {
             plasticity: f64,
             influence: f64,
             attributes: Vec::<f64>,
+            n_interactions: u64,
         ) -> Entity {
             Entity {
                 id,
@@ -27,6 +29,7 @@ pub mod entity {
                 plasticity,
                 influence,
                 attributes,
+                n_interactions,
             }
         }
 
@@ -39,12 +42,13 @@ pub mod entity {
         fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
             write!(
                 f,
-                "{:3} - Sum: {:10.2}: Product: {:10.2} Fitness: {:10.4} Values: {:10.6?}",
+                "{:3} - Sum: {:10.2}: Product: {:10.2} Fitness: {:10.4} Values: {:10.6?} - Interactions: {}",
                 self.id,
                 sum_vector(&self.attributes),
                 multiply_vector(&self.attributes),
                 fitness(&self),
-                self.attributes
+                self.attributes,
+                self.n_interactions
             )
         }
     }
@@ -56,7 +60,8 @@ pub mod entity {
                 self.name.to_string(),
                 self.plasticity,
                 self.influence,
-                self.attributes.to_vec()
+                self.attributes.to_vec(),
+                self.n_interactions
             )
         }
     }
@@ -71,9 +76,10 @@ mod tests {
         let entity = Entity::new(
             12u32,
             "Hello".to_string(),
-            1.2,
+            0.5,
             2.3,
-            Vec::<f64>::new()
+            Vec::<f64>::new(),
+            0
         );
 
         assert_ne!(entity.to_string(), "".to_string());
