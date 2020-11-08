@@ -1,6 +1,22 @@
 {
-  "id": "somewhere",
-  "n_beings": 32,
-  "state": [],
-  "next_state": []
+  "universe": {
+    "id": "somewhere",
+
+    "n_beings": 50,
+    "n_attributes": 3,
+    "attribute_domain_low": -100,
+    "attribute_domain_high": 100,
+
+    "success_value": 1991,
+    "fitness_success_margin": 0.001,
+    "favor_integer_soluion": false,
+    "mutation_value": 0.001,
+
+    "encounters_per_tick_min": 2,
+    "encounters_per_tick_max": 5,
+    "entities_per_encounter_min": 2,
+    "entities_per_encounter_max": 5,
+
+    "csv_output_filename": "shunyata_output.csv"
+  }
 }
