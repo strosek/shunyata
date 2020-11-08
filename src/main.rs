@@ -1,6 +1,7 @@
 mod entity;
 mod universe;
-pub use entity::entity::Entity;
+mod math;
+
 //use serde_json;
 use std::string;
 pub use universe::universe::Universe;

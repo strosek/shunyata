@@ -2,7 +2,8 @@ pub mod entity {
     use serde::{Deserialize, Serialize};
     use std::fmt;
     use std::string;
-    pub use crate::universe::universe::{sum_vector, multiply_vector, fitness};
+    pub use crate::universe::universe::{fitness};
+    pub use crate::math::math::{multiply_vector, sum_vector};
 
     #[derive(Serialize, Deserialize, Debug)]
     pub struct Entity {
@@ -33,8 +34,10 @@ pub mod entity {
             }
         }
 
-        pub fn similarity(_e1: &Entity, _e2: &Entity) -> f64 {
-            0.0
+        #[allow(dead_code)]
+        pub fn similarity(e1: &Entity, e2: &Entity) -> f64 {
+            let similarity = sum_vector(&e1.attributes) - sum_vector(&e2.attributes);
+            similarity.abs()
         }
     }
 
@@ -69,7 +72,7 @@ pub mod entity {
 
 #[cfg(test)]
 mod tests {
-    use crate::Entity;
+    use crate::entity::entity::Entity;
 
     #[test]
     fn test_new() {

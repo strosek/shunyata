@@ -1,5 +1,6 @@
 pub mod universe {
     use crate::entity::entity::Entity;
+    use crate::math::math::multiply_vector;
     use rand::Rng;
     use serde::{Deserialize, Serialize};
 
@@ -21,24 +22,6 @@ pub mod universe {
         n_being_attributes: usize,
         state: Vec<Entity>,
         next_state: Vec<Entity>,
-    }
-
-    pub fn multiply_vector(vector: &Vec<f64>) -> f64 {
-        let mut product = 1.0;
-        for value in vector {
-            product *= *value;
-        }
-
-        product
-    }
-
-    pub fn sum_vector(vector: &Vec<f64>) -> f64 {
-        let mut sum = 0.0;
-        for value in vector {
-            sum += *value;
-        }
-
-        sum
     }
 
     pub fn fitness(entity: &Entity) -> f64 {
@@ -96,6 +79,7 @@ pub mod universe {
             for i in 0..self.n_beings {
                 let plasticity = rng.gen_range(0.0, 0.8);
                 let influence = rng.gen_range(1.0, 3.0);
+
                 let mut attributes = Vec::<f64>::with_capacity(self.n_being_attributes);
                 for _ in 0..self.n_being_attributes {
                     attributes.push(rng.gen_range(
@@ -287,22 +271,3 @@ pub mod universe {
     }
 }
 
-
-#[cfg(test)]
-mod tests {
-    use crate::universe::universe::*;
-
-    #[test]
-    fn test_sum_vector() {
-        let v1 = vec![1.0, 2.0, 3.0, 4.0];
-
-        assert_eq!(10.0, sum_vector(&v1));
-    }
-
-    #[test]
-    fn test_multiply_vector() {
-        let v1 = vec![1.0, 2.0, 3.0, 4.0];
-
-        assert_eq!(24.0, multiply_vector(&v1));
-    }
-}
