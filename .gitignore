@@ -16,3 +16,6 @@ Cargo.lock
 
 # Jetbrains Files
 .idea/
+
+# Output CSVs
+*.csv
