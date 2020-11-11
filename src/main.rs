@@ -10,11 +10,17 @@ fn get_options() -> ArgMatches {
         .version("0.1.0")
         .author("Erick Corona. <edcoronag@gmail.com>")
         .about("Simulate the influence of entities, or beings, with others. Influence is targeted to solve something.")
-        .arg(Arg::new("config-file")
+        .arg(Arg::new("config_file")
             .short('c')
             .long("config-file")
             .value_name("FILE")
             .help_heading(Option::from("Set a custom config file"))
+            .takes_value(true))
+        .arg(Arg::new("output_csv")
+            .short('o')
+            .long("output-csv")
+            .value_name("FILE")
+            .help_heading(Option::from("Set a custom CSV output file"))
             .takes_value(true))
         .get_matches();
 
@@ -27,8 +33,11 @@ fn main() {
     println!("Shunyata: influence simulation");
     println!("==============================");
 
-    let mut universe =
-        Universe::from_config(option_matches.value_of("config").unwrap_or("config.json"));
+    let mut universe = Universe::from_config(
+        option_matches
+            .value_of("config_file")
+            .unwrap_or("resources/universe_cfg.json"),
+    );
 
     universe.spawn();
 

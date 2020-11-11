@@ -1,11 +1,9 @@
 pub mod entity {
     pub use crate::math::math::{multiply_vector, sum_vector};
     pub use crate::universe::universe::fitness;
-    use serde::{Deserialize, Serialize};
     use std::fmt;
     use std::string;
 
-    #[derive(Serialize, Deserialize, Debug)]
     pub struct Entity {
         pub id: u32,
         pub name: string::String,
@@ -49,7 +47,7 @@ pub mod entity {
                 self.id,
                 sum_vector(&self.attributes),
                 multiply_vector(&self.attributes),
-                fitness(&self),
+                fitness(&self, 666.0f64),
                 self.attributes,
                 self.n_interactions
             )

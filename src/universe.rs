@@ -2,39 +2,12 @@ pub mod universe {
     use crate::entity::entity::Entity;
     use crate::math::math::multiply_vector;
 
+    use rand::Rng;
+    use std::fs;
     use std::fs::OpenOptions;
     use std::io::prelude::*;
+    use std::ops::Index;
     use std::path::Path;
-    use std::string;
-
-    use rand::Rng;
-    use serde::{Deserialize, Serialize};
-
-    const CSV_NAME: &str = "shunyata.csv";
-    const DOMAIN_ATTRIBUTES_HIGH: f64 = 1000.0;
-    const DOMAIN_ATTRIBUTES_LOW: f64 = 500.0;
-
-    #[derive(Serialize, Deserialize, Debug)]
-    pub struct Universe {
-        id: string::String,
-        cycles: usize,
-        n_beings: usize,
-        n_being_attributes: usize,
-        state: Vec<Entity>,
-        next_state: Vec<Entity>,
-    }
-
-    pub fn fitness(entity: &Entity) -> f64 {
-        let mut fitness = solution_difference(1024.0f64, &entity.attributes) * -1.0f64;
-
-        // Consider fitness very close to 0 as a sufficiently good solution.
-        let success_margin = -0.001f64;
-        if fitness > success_margin {
-            fitness = 1.0f64;
-        }
-
-        fitness
-    }
 
     pub fn solution_difference(success_value: f64, attributes: &Vec<f64>) -> f64 {
         let mut difference = 0.0f64;
@@ -47,29 +20,134 @@ pub mod universe {
         difference.abs()
     }
 
+    pub fn fitness(entity: &Entity, success_value: f64) -> f64 {
+        let mut fitness = solution_difference(success_value, &entity.attributes) * -1.0f64;
+
+        // Consider fitness very close to 0 as a sufficiently good solution.
+        let success_margin = -0.001f64;
+        if fitness > success_margin {
+            fitness = 1.0f64;
+        }
+
+        fitness
+    }
+
+    pub struct Universe {
+        // Core data
+        id: String,
+        state: Vec<Entity>,
+        next_state: Vec<Entity>,
+
+        // Program parameters
+        csv_out: String,
+
+        // Simulation parameters
+        attribute_domain_high: f64,
+        attribute_domain_low: f64,
+        encounters_per_tick_max: usize,
+        encounters_per_tick_min: usize,
+        entities_per_encounter_max: usize,
+        entities_per_encounter_min: usize,
+        favor_integers: bool,
+        n_being_attributes: usize,
+        n_beings: usize,
+        state_dump_frequency: usize,
+        success_margin: f64,
+        success_value: f64,
+        total_cycles: usize,
+    }
+
     impl Universe {
         pub fn new() -> Universe {
+            let id = "somewhere".to_string();
             let state = Vec::<Entity>::new();
             let next_state = Vec::<Entity>::new();
-            let id = "somewhere".to_string();
-            let cycles = 1_000_000usize;
-            let n_beings = 50usize;
+            let csv_out = "shunyata_output.csv".to_string();
+            let attribute_domain_high = 0.0f64;
+            let attribute_domain_low = 100.0f64;
+            let encounters_per_tick_max = 3usize;
+            let encounters_per_tick_min = 1usize;
+            let entities_per_encounter_max = 5usize;
+            let entities_per_encounter_min = 2usize;
+            let favor_integers = false;
             let n_being_attributes = 3usize;
+            let n_beings = 50usize;
+            let state_dump_frequency = 10_000usize;
+            let success_margin = 0.001f64;
+            let success_value = 666.0f64;
+            let total_cycles = 1_000_000usize;
 
             Universe {
                 id,
-                cycles,
-                n_beings,
-                n_being_attributes,
                 state,
                 next_state,
+                csv_out,
+                attribute_domain_high,
+                attribute_domain_low,
+                encounters_per_tick_max,
+                encounters_per_tick_min,
+                entities_per_encounter_max,
+                entities_per_encounter_min,
+                favor_integers,
+                n_being_attributes,
+                n_beings,
+                state_dump_frequency,
+                success_margin,
+                success_value,
+                total_cycles,
             }
         }
 
-        pub fn from_config(config_file: &str) -> Universe {
-            // Load options from csv.
+        pub fn from_config(config_path: &str) -> Universe {
+            let json_string = fs::read_to_string(config_path).unwrap();
+            let parsed_json = json::parse(json_string.as_str()).unwrap();
+            let universe_values = parsed_json.index("universe");
 
-            Universe::new()
+            let id = universe_values.index("id").to_string();
+            let state = Vec::<Entity>::new();
+            let next_state = Vec::<Entity>::new();
+            let csv_out = universe_values.index("csv_output_filename").to_string();
+            let attribute_domain_high = universe_values["attribute_domain_high"].as_f64().unwrap();
+            let attribute_domain_low = universe_values["attribute_domain_low"].as_f64().unwrap();
+            let encounters_per_tick_max = universe_values["encounters_per_tick_max"]
+                .as_usize()
+                .unwrap();
+            let encounters_per_tick_min = universe_values["encounters_per_tick_min"]
+                .as_usize()
+                .unwrap();
+            let entities_per_encounter_max = universe_values["entities_per_encounter_max"]
+                .as_usize()
+                .unwrap();
+            let entities_per_encounter_min = universe_values["entities_per_encounter_min"]
+                .as_usize()
+                .unwrap();
+            let favor_integers = universe_values["favor_integers"].as_bool().unwrap();
+            let n_being_attributes = universe_values["n_being_attributes"].as_usize().unwrap();
+            let n_beings = universe_values["n_beings"].as_usize().unwrap();
+            let state_dump_frequency = universe_values["state_dump_frequency"].as_usize().unwrap();
+            let success_margin = universe_values["success_margin"].as_f64().unwrap();
+            let success_value = universe_values["success_value"].as_f64().unwrap();
+            let total_cycles = universe_values["total_cycles"].as_usize().unwrap();
+
+            Universe {
+                id,
+                state,
+                next_state,
+                csv_out,
+                attribute_domain_high,
+                attribute_domain_low,
+                encounters_per_tick_max,
+                encounters_per_tick_min,
+                entities_per_encounter_max,
+                entities_per_encounter_min,
+                favor_integers,
+                n_being_attributes,
+                n_beings,
+                state_dump_frequency,
+                success_margin,
+                success_value,
+                total_cycles,
+            }
         }
 
         pub fn spawn(&mut self) {
@@ -86,7 +164,7 @@ pub mod universe {
                 let mut attributes = Vec::<f64>::with_capacity(self.n_being_attributes);
                 for _ in 0..self.n_being_attributes {
                     attributes.push(
-                        rng.gen_range(DOMAIN_ATTRIBUTES_LOW, DOMAIN_ATTRIBUTES_HIGH)
+                        rng.gen_range(self.attribute_domain_low, self.attribute_domain_high)
                             .round(),
                     );
                 }
@@ -106,7 +184,7 @@ pub mod universe {
 
             self.create_csv();
 
-            for i in 0..self.cycles {
+            for i in 0..self.total_cycles {
                 self.tick();
 
                 if i % 100_000_usize == 0 {
@@ -115,7 +193,7 @@ pub mod universe {
                     self.print_state();
                 }
             }
-            println!("Tick no: {}", self.cycles);
+            println!("Tick no: {}", self.total_cycles);
             self.write_csv_line();
             self.print_state();
         }
@@ -124,7 +202,7 @@ pub mod universe {
             let mut successes = 0usize;
             for entity in &self.state {
                 print!("{}", entity);
-                if fitness(&entity) >= 1.0f64 {
+                if fitness(&entity, self.success_value) >= 1.0f64 {
                     println!(" - Succeeded!");
                     successes += 1usize;
                 } else {
@@ -135,9 +213,10 @@ pub mod universe {
         }
 
         fn create_csv(&self) {
-            let path = Path::new(CSV_NAME);
+            let path = Path::new(self.csv_out.as_str());
 
             OpenOptions::new()
+                .create(true)
                 .write(true)
                 .truncate(true)
                 .open(path)
@@ -145,7 +224,7 @@ pub mod universe {
         }
 
         fn write_csv_line(&self) {
-            let path = Path::new(CSV_NAME);
+            let path = Path::new(self.csv_out.as_str());
 
             let mut file;
             file = OpenOptions::new()
@@ -181,7 +260,7 @@ pub mod universe {
                 let entity_idx = rng.gen_range(0, self.n_beings);
 
                 // Stop mutations if solution is reached.
-                if fitness(&self.state[entity_idx]) < 0.0f64 {
+                if fitness(&self.state[entity_idx], self.success_value) < 0.0f64 {
                     let attribute_idx = rng.gen_range(0usize, self.n_being_attributes);
                     self.next_state[entity_idx].attributes[attribute_idx] +=
                         rng.gen_range(-0.001f64, 0.001f64);
@@ -197,11 +276,15 @@ pub mod universe {
                 has_interacted.push(false);
             }
 
-            let n_groups = rng.gen_range(2, 3);
+            let n_groups =
+                rng.gen_range(self.encounters_per_tick_min, self.encounters_per_tick_max);
             let mut groups = Vec::<Vec<usize>>::new();
 
             for _ in 0..n_groups {
-                let n_entities_group = rng.gen_range(2, 4);
+                let n_entities_group = rng.gen_range(
+                    self.entities_per_encounter_min,
+                    self.entities_per_encounter_max,
+                );
 
                 let mut encounter = Vec::<usize>::new();
 
@@ -271,7 +354,9 @@ pub mod universe {
 
                     // Make entity more similar. Only learn if target is more successful.
                     let plasticity = self.state[*j].plasticity;
-                    if fitness(&self.state[*j]) < fitness(&target_entity) {
+                    if fitness(&self.state[*j], self.success_value)
+                        < fitness(&target_entity, self.success_value)
+                    {
                         if self.state[*j].attributes[i] < target[i] {
                             self.next_state[*j].attributes[i] +=
                                 (target[i] - self.state[*j].attributes[i]) * plasticity;
