@@ -1,5 +1,5 @@
 pub mod entity {
-    pub use crate::math::math::{multiply_vector, sum_vector};
+    pub use crate::math::math::{equation_result, multiply_vector, sum_vector};
     pub use crate::universe::universe::fitness;
     use std::fmt;
     use std::string;
@@ -43,11 +43,11 @@ pub mod entity {
         fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
             write!(
                 f,
-                "{:3} - Sum: {:6.2}: Product: {:10.4} Fitness: {:10.4} Values: {:10.6?}    Interactions: {}",
+                "{:3} - Sum: {:6.2}: Evaluation: {:10.4} Fitness: {:10.4} Values: {:10.6?}    Interactions: {}",
                 self.id,
                 sum_vector(&self.attributes),
-                multiply_vector(&self.attributes),
-                fitness(&self, 666.0f64),
+                equation_result(&self.attributes),
+                fitness(&self, 0f64),
                 self.attributes,
                 self.n_interactions
             )

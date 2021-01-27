@@ -1,6 +1,6 @@
 pub mod universe {
     use crate::entity::entity::Entity;
-    use crate::math::math::multiply_vector;
+    use crate::math::math::{equation_result, multiply_vector};
 
     use rand::Rng;
     use std::fs;
@@ -10,14 +10,15 @@ pub mod universe {
     use std::path::Path;
 
     pub fn solution_difference(success_value: f64, attributes: &Vec<f64>) -> f64 {
-        let mut difference = 0.0f64;
-        let attributes_product = multiply_vector(attributes);
+        let evaluated_value = equation_result(attributes);
+        /*let attributes_product = multiply_vector(attributes);
         if success_value > attributes_product {
             difference = success_value - attributes_product;
         } else if success_value < attributes_product {
             difference = attributes_product - success_value;
-        }
-        difference.abs()
+        }*/
+
+        (success_value - evaluated_value).abs()
     }
 
     pub fn fitness(entity: &Entity, success_value: f64) -> f64 {
@@ -25,7 +26,7 @@ pub mod universe {
 
         // Consider fitness very close to 0 as a sufficiently good solution.
         let success_margin = -0.001f64;
-        if fitness > success_margin {
+        if fitness >= success_margin {
             fitness = 1.0f64;
         }
 
@@ -367,7 +368,7 @@ pub mod universe {
                     }
 
                     // Round if favoring integers.
-                    let favor_integers = false;
+                    let favor_integers = self.favor_integers;
                     if favor_integers {
                         self.next_state[*j].attributes[i] =
                             self.next_state[*j].attributes[i].round();
