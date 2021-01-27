@@ -74,7 +74,14 @@ mod tests {
 
     #[test]
     fn test_new() {
-        let entity = Entity::new(12u32, "Hello".to_string(), 0.5, 2.3, Vec::<f64>::new(), 0);
+        let entity = Entity::new(
+            12u32,
+            "Hello".to_string(),
+            0.5,
+            2.3,
+            vec![1.0f64, 2.0f64, 3.0f64],
+            0,
+        );
 
         assert_ne!(entity.to_string(), "".to_string());
     }
