@@ -47,7 +47,8 @@ pub mod entity {
                 self.id,
                 sum_vector(&self.attributes),
                 equation_result(&self.attributes),
-                fitness(&self, 0f64),
+                // FIXME: retrieve parameters from config file.
+                fitness(&self, 360.0f64, 0.0001f64),
                 self.attributes,
                 self.n_interactions
             )

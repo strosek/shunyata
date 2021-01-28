@@ -1,6 +1,6 @@
 pub mod universe {
     use crate::entity::entity::Entity;
-    use crate::math::math::{equation_result, multiply_vector};
+    use crate::math::math::{equation_result, multiply_vector, sum_vector};
 
     use rand::Rng;
     use std::fs;
@@ -10,24 +10,15 @@ pub mod universe {
     use std::path::Path;
 
     pub fn solution_difference(success_value: f64, attributes: &Vec<f64>) -> f64 {
-        let evaluated_value = equation_result(attributes);
-        /*let attributes_product = multiply_vector(attributes);
-        if success_value > attributes_product {
-            difference = success_value - attributes_product;
-        } else if success_value < attributes_product {
-            difference = attributes_product - success_value;
-        }*/
-
-        (success_value - evaluated_value).abs()
+        (success_value - equation_result(attributes)).abs()
     }
 
-    pub fn fitness(entity: &Entity, success_value: f64) -> f64 {
+    pub fn fitness(entity: &Entity, success_value: f64, success_margin: f64) -> f64 {
         let mut fitness = solution_difference(success_value, &entity.attributes) * -1.0f64;
 
-        // Consider fitness very close to 0 as a sufficiently good solution.
-        let success_margin = -0.001f64;
-        if fitness >= success_margin {
-            fitness = 1.0f64;
+        // Consider a difference very close to 0 as a sufficiently good solution.
+        if fitness >= 0.0f64 - success_margin {
+            fitness += sum_vector(&entity.attributes);
         }
 
         fitness
@@ -185,10 +176,11 @@ pub mod universe {
 
             self.create_csv();
 
+            println!("Universe: {}", self.id);
             for i in 0..self.total_cycles {
                 self.tick();
 
-                if i % 100_000_usize == 0 {
+                if i % self.state_dump_frequency == 0 {
                     println!("Tick no: {}", i);
                     self.write_csv_line();
                     self.print_state();
@@ -203,7 +195,7 @@ pub mod universe {
             let mut successes = 0usize;
             for entity in &self.state {
                 print!("{}", entity);
-                if fitness(&entity, self.success_value) >= 1.0f64 {
+                if fitness(&entity, self.success_value, self.success_margin) >= 0.0f64 {
                     println!(" - Succeeded!");
                     successes += 1usize;
                 } else {
@@ -261,7 +253,7 @@ pub mod universe {
                 let entity_idx = rng.gen_range(0, self.n_beings);
 
                 // Stop mutations if solution is reached.
-                if fitness(&self.state[entity_idx], self.success_value) < 0.0f64 {
+                if fitness(&self.state[entity_idx], self.success_value, self.success_margin) < 0.0f64 {
                     let attribute_idx = rng.gen_range(0usize, self.n_being_attributes);
                     self.next_state[entity_idx].attributes[attribute_idx] +=
                         rng.gen_range(-0.001f64, 0.001f64);
@@ -355,8 +347,8 @@ pub mod universe {
 
                     // Make entity more similar. Only learn if target is more successful.
                     let plasticity = self.state[*j].plasticity;
-                    if fitness(&self.state[*j], self.success_value)
-                        < fitness(&target_entity, self.success_value)
+                    if fitness(&self.state[*j], self.success_value, self.success_margin)
+                        < fitness(&target_entity, self.success_value, self.success_margin)
                     {
                         if self.state[*j].attributes[i] < target[i] {
                             self.next_state[*j].attributes[i] +=
