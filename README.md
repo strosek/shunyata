@@ -46,3 +46,8 @@ similar to the others. The effects of interaction should be easy to change and, 
   - Entities can influence others in a truthful or lier way.
   - Implement geographic interactions, based on vectors of 2, 3 or 4 dimensions.
 - Read Json or similar config file with characteristics of the universe and the entities in it.
+
+### Trello Board
+
+You can find the future changes and currently in-progress tasks here:
+[board]: https://trello.com/b/mN8CucSt/shunyata Shunyata's Trello Board
