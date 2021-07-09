@@ -29,7 +29,6 @@ similar to the others. The effects of interaction should be easy to change and, 
 
 ### Future ideas
 
-- Entities can have different plasticity, that is, how much it can be influenced by others.
 - Interaction between similar Entities is stronger.
 - Factors that could change interactions:
   - Value diversity of entities.
@@ -45,9 +44,12 @@ similar to the others. The effects of interaction should be easy to change and, 
   - Introduce the concept of compassion vs selfishness.
   - Entities can influence others in a truthful or lier way.
   - Implement geographic interactions, based on vectors of 2, 3 or 4 dimensions.
+  - Variable amount of attributes
+  - Meta-attributes and groups of attributes with different meanings.
+  - Entity collaboration.
+  - Use fittest entities to populate next universe.
 - Read Json or similar config file with characteristics of the universe and the entities in it.
 
 ### Trello Board
 
-You can find the future changes and currently in-progress tasks here:
-[board]: https://trello.com/b/mN8CucSt/shunyata Shunyata's Trello Board
+You can find the future changes and currently in-progress tasks here: [Trello Board](https://trello.com/b/mN8CucSt/shunyata)
