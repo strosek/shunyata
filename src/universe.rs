@@ -150,6 +150,7 @@ pub mod universe {
             let mut rng = rand::thread_rng();
 
             for i in 0..self.n_beings {
+                // TODO: add max and min plasticity and influence as Universe parameters.
                 let plasticity = rng.gen_range(0.0, 0.8);
                 let influence = rng.gen_range(1.0, 3.0);
 
@@ -236,13 +237,14 @@ pub mod universe {
         }
 
         fn tick(&mut self) {
-            let interactions = &self.get_random_interactions();
+            let interactions = &self.gen_random_interactions();
             for i in 0..interactions.len() {
                 self.evaluate_interaction(&interactions[i]);
             }
 
             self.mutate_entities();
 
+            // TODO: assign the next state with Rayon.
             self.state = self.next_state.to_vec();
         }
 
@@ -253,7 +255,12 @@ pub mod universe {
                 let entity_idx = rng.gen_range(0, self.n_beings);
 
                 // Stop mutations if solution is reached.
-                if fitness(&self.state[entity_idx], self.success_value, self.success_margin) < 0.0f64 {
+                if fitness(
+                    &self.state[entity_idx],
+                    self.success_value,
+                    self.success_margin,
+                ) < 0.0f64
+                {
                     let attribute_idx = rng.gen_range(0usize, self.n_being_attributes);
                     self.next_state[entity_idx].attributes[attribute_idx] +=
                         rng.gen_range(-0.001f64, 0.001f64);
@@ -262,12 +269,9 @@ pub mod universe {
         }
 
         /// Get who interacts with who, randomly.
-        fn get_random_interactions(&mut self) -> Vec<Vec<usize>> {
+        fn gen_random_interactions(&mut self) -> Vec<Vec<usize>> {
             let mut rng = rand::thread_rng();
-            let mut has_interacted = Vec::<bool>::with_capacity(self.n_beings);
-            for _ in 0..self.n_beings {
-                has_interacted.push(false);
-            }
+            let mut has_interacted = vec![false; self.n_beings];
 
             let n_groups =
                 rng.gen_range(self.encounters_per_tick_min, self.encounters_per_tick_max);
@@ -295,13 +299,11 @@ pub mod universe {
                 }
                 groups.push(encounter);
             }
-            has_interacted.clear();
 
             groups
         }
 
         fn evaluate_interaction(&mut self, encounter: &Vec<usize>) {
-            // Calculate average of entities that met.
             let mut average = Vec::<f64>::with_capacity(self.n_being_attributes);
             let mut target = Vec::<f64>::with_capacity(self.n_being_attributes);
 
@@ -311,6 +313,7 @@ pub mod universe {
                 target.push(0.0);
             }
 
+            // Calculate average of entities that met.
             for i in 0..self.n_being_attributes {
                 for j in encounter {
                     average[i] += self.state[*j].attributes[i];
@@ -337,7 +340,7 @@ pub mod universe {
             for i in 0..self.n_being_attributes {
                 for j in encounter {
                     let target_entity = Entity::new(
-                        u32::max_value(),
+                        u32::MAX,
                         "target_entity".to_string(),
                         0.0,
                         0.0,
