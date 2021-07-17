@@ -1,5 +1,5 @@
 pub mod entity {
-    pub use crate::math::math::{equation_result, multiply_vector, sum_vector};
+    pub use crate::math::math::equation_result;
     pub use crate::universe::universe::fitness;
     use std::fmt;
     use std::string;
@@ -34,7 +34,8 @@ pub mod entity {
 
         #[allow(dead_code)]
         pub fn similarity(e1: &Entity, e2: &Entity) -> f64 {
-            let similarity = sum_vector(&e1.attributes) - sum_vector(&e2.attributes);
+            let similarity: f64 =
+                e1.attributes.iter().sum::<f64>() - e2.attributes.iter().sum::<f64>();
             similarity.abs()
         }
     }
@@ -45,7 +46,7 @@ pub mod entity {
                 f,
                 "{:3} - Sum: {:6.2}: Evaluation: {:10.4} Fitness: {:10.4} Values: {:10.6?}    Interactions: {}",
                 self.id,
-                sum_vector(&self.attributes),
+                self.attributes.iter().sum::<f64>(),
                 equation_result(&self.attributes),
                 // FIXME: retrieve parameters from config file.
                 fitness(&self, 360.0f64, 0.0001f64),

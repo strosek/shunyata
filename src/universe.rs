@@ -1,6 +1,6 @@
 pub mod universe {
     use crate::entity::entity::Entity;
-    use crate::math::math::{equation_result, multiply_vector, sum_vector};
+    use crate::math::math::equation_result;
 
     use rand::Rng;
     use std::fs;
@@ -18,7 +18,7 @@ pub mod universe {
 
         // Consider a difference very close to 0 as a sufficiently good solution.
         if fitness >= 0.0f64 - success_margin {
-            fitness += sum_vector(&entity.attributes);
+            fitness += entity.attributes.iter().sum::<f64>();
         }
 
         fitness
@@ -229,7 +229,10 @@ pub mod universe {
 
             let mut line = String::new();
             for entity in &self.state {
-                line.push_str(&format!("{:.5},", multiply_vector(&entity.attributes)));
+                line.push_str(&format!(
+                    "{:.5},",
+                    entity.attributes.iter().product::<f64>()
+                ));
             }
             line.push_str("\n");
 
