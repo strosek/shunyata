@@ -151,15 +151,13 @@ pub mod universe {
 
             for i in 0..self.n_beings {
                 // TODO: add max and min plasticity and influence as Universe parameters.
-                let plasticity = rng.gen_range(0.0, 0.8);
-                let influence = rng.gen_range(1.0, 3.0);
+                let plasticity = rng.gen_range(0.0..0.8);
+                let influence = rng.gen_range(1.0..3.0);
 
                 let mut attributes = Vec::<f64>::with_capacity(self.n_being_attributes);
                 for _ in 0..self.n_being_attributes {
-                    attributes.push(
-                        rng.gen_range(self.attribute_domain_low, self.attribute_domain_high)
-                            .round(),
-                    );
+                    attributes
+                        .push(rng.gen_range(self.attribute_domain_low..self.attribute_domain_high));
                 }
 
                 self.state.push(Entity::new(
@@ -253,9 +251,9 @@ pub mod universe {
 
         fn mutate_entities(&mut self) {
             let mut rng = rand::thread_rng();
-            let n_mutations = rng.gen_range(0, self.n_beings / 10usize);
+            let n_mutations = rng.gen_range(0..self.n_beings / 10usize);
             for _ in 0..n_mutations {
-                let entity_idx = rng.gen_range(0, self.n_beings);
+                let entity_idx = rng.gen_range(0..self.n_beings);
 
                 // Stop mutations if solution is reached.
                 if fitness(
@@ -264,9 +262,9 @@ pub mod universe {
                     self.success_margin,
                 ) < 0.0f64
                 {
-                    let attribute_idx = rng.gen_range(0usize, self.n_being_attributes);
+                    let attribute_idx = rng.gen_range(0usize..self.n_being_attributes);
                     self.next_state[entity_idx].attributes[attribute_idx] +=
-                        rng.gen_range(-0.001f64, 0.001f64);
+                        rng.gen_range(-0.001f64..0.001f64);
                 }
             }
         }
@@ -277,20 +275,19 @@ pub mod universe {
             let mut has_interacted = vec![false; self.n_beings];
 
             let n_groups =
-                rng.gen_range(self.encounters_per_tick_min, self.encounters_per_tick_max);
+                rng.gen_range(self.encounters_per_tick_min..self.encounters_per_tick_max);
             let mut groups = Vec::<Vec<usize>>::new();
 
             for _ in 0..n_groups {
                 let n_entities_group = rng.gen_range(
-                    self.entities_per_encounter_min,
-                    self.entities_per_encounter_max,
+                    self.entities_per_encounter_min..self.entities_per_encounter_max,
                 );
 
                 let mut encounter = Vec::<usize>::new();
 
                 let mut i_entity = 0usize;
                 while i_entity < n_entities_group {
-                    let entity_index = rng.gen_range(0, self.n_beings);
+                    let entity_index = rng.gen_range(0..self.n_beings);
                     if has_interacted[entity_index] == false {
                         encounter.push(entity_index);
 
@@ -307,14 +304,9 @@ pub mod universe {
         }
 
         fn evaluate_interaction(&mut self, encounter: &Vec<usize>) {
-            let mut average = Vec::<f64>::with_capacity(self.n_being_attributes);
-            let mut target = Vec::<f64>::with_capacity(self.n_being_attributes);
-
-            // Build vector for averages.
-            for _ in 0..self.n_being_attributes {
-                average.push(0.0);
-                target.push(0.0);
-            }
+            // Build vectors for average and targets.
+            let mut average = vec![0.0f64; self.n_being_attributes];
+            let mut target = vec![0.0f64; self.n_being_attributes];
 
             // Calculate average of entities that met.
             for i in 0..self.n_being_attributes {

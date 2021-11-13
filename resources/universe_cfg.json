@@ -2,7 +2,7 @@
   "universe": {
     "id": "somewhere",
 
-    "n_beings": 50,
+    "n_beings": 1000,
     "n_being_attributes": 3,
     "attribute_domain_low": 500,
     "attribute_domain_high": 100000,
@@ -12,12 +12,12 @@
     "favor_integers": false,
     "mutation_value": 0.001,
     "total_cycles": 1000000,
-    "state_dump_frequency": 10000,
+    "state_dump_frequency": 100000,
 
     "encounters_per_tick_min": 2,
-    "encounters_per_tick_max": 5,
-    "entities_per_encounter_min": 2,
-    "entities_per_encounter_max": 5,
+    "encounters_per_tick_max": 7,
+    "entities_per_encounter_min": 3,
+    "entities_per_encounter_max": 20,
 
     "csv_output_filename": "shunyata_output.csv"
   }
