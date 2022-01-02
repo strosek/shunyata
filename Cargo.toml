@@ -1,8 +1,8 @@
 [package]
 name = "shunyata"
-version = "0.1.0"
+version = "0.2.0"
 authors = ["Erick Daniel Corona"]
-edition = "2018"
+edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -11,3 +11,5 @@ clap = "3.0.0-beta.5"
 json = "0.12.4"
 rand = "0.8.4"
 rand_distr = "0.2.2"
+piston_window = "0.121.0"
+rayon = "1.5.1"

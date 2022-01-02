@@ -1,7 +1,20 @@
 pub mod math {
-    pub fn equation_result(vector: &Vec<f64>) -> f64 {
-        // 4x^3 + 2y + z (z + 3) = success_value
-        4.0f64 * vector[0].powf(3.0f64) + 2.0f64 * vector[1] + vector[2] * (vector[2] + 3.0f64)
+    pub struct Position {
+        pub x: f64,
+        pub y: f64,
+    }
+
+    impl Clone for Position {
+        fn clone(&self) -> Self {
+            Position {
+                x: self.x,
+                y: self.y,
+            }
+        }
+    }
+
+    pub fn distance(a: &Position, b: &Position) -> f64 {
+        ((a.x - b.x).powi(2) + (a.y - b.y).powi(2)).sqrt()
     }
 }
 

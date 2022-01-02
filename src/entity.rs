@@ -1,90 +1,91 @@
 pub mod entity {
-    pub use crate::math::math::equation_result;
-    pub use crate::universe::universe::fitness;
+    use crate::math::math::Position;
+    use crate::universe::universe::{fitness, UNIVERSE_HEIGHT, UNIVERSE_WIDTH};
+    use rand::Rng;
     use std::fmt;
-    use std::string;
+
+    pub const N_VALUES: usize = 6;
+    pub const MAX_ENERGY: u64 = 300;
+    pub const MAX_RADIUS: f64 = 8.0;
 
     pub struct Entity {
-        pub id: u32,
-        pub name: string::String,
-        pub plasticity: f64,
-        pub influence: f64,
-        pub attributes: Vec<f64>,
-        pub n_interactions: u64,
+        pub id: usize,
+        pub values: Vec<f64>,
+        pub initial_energy: u64,
+        pub energy: u64,
+        pub position: Position,
+        pub radius: f64,
     }
 
     impl Entity {
-        pub fn new(
-            id: u32,
-            name: string::String,
-            plasticity: f64,
-            influence: f64,
-            attributes: Vec<f64>,
-            n_interactions: u64,
-        ) -> Entity {
+        pub fn with_id(id: usize) -> Entity {
+            let mut rng = rand::thread_rng();
+            let mut initial_values = Vec::with_capacity(N_VALUES);
+            let colors = vec![
+                [255, 0, 0],
+                [0, 255, 0],
+                [0, 0, 255],
+                [255, 255, 0],
+                [255, 0, 255],
+                [0, 255, 255],
+            ];
+            let color = colors[rng.gen_range(0..colors.len())];
+            initial_values.push(1.0 / 255.0 * color[0] as f64);
+            initial_values.push(1.0 / 255.0 * color[1] as f64);
+            initial_values.push(1.0 / 255.0 * color[2] as f64);
+
+            // General values.
+            for _ in 3..N_VALUES {
+                initial_values.push(rng.gen_range(-1000.0..1000.0));
+            }
+
+            let initial_energy = rng.gen_range(0..MAX_ENERGY);
+
             Entity {
                 id,
-                name,
-                plasticity,
-                influence,
-                attributes,
-                n_interactions,
+                values: initial_values,
+                initial_energy,
+                energy: initial_energy,
+                position: Position {
+                    x: rng.gen_range(0.0..UNIVERSE_WIDTH),
+                    y: rng.gen_range(0.0..UNIVERSE_HEIGHT),
+                },
+                radius: rng.gen_range(1.0..MAX_RADIUS),
             }
-        }
-
-        #[allow(dead_code)]
-        pub fn similarity(e1: &Entity, e2: &Entity) -> f64 {
-            let similarity: f64 =
-                e1.attributes.iter().sum::<f64>() - e2.attributes.iter().sum::<f64>();
-            similarity.abs()
         }
     }
 
-    impl fmt::Display for Entity {
+    impl Clone for Entity {
+        fn clone(&self) -> Entity {
+            Entity {
+                id: self.id,
+                values: self.values.to_vec(),
+                initial_energy: self.initial_energy,
+                energy: self.energy,
+                position: self.position.clone(),
+                radius: self.radius,
+            }
+        }
+    }
+
+    impl fmt::Debug for Entity {
         fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
             write!(
                 f,
-                "{:3} - Sum: {:6.2}: Evaluation: {:10.4} Fitness: {:10.4} Values: {:10.6?}    Interactions: {}",
+                //"v:{} e:{}",
+                //self.value, self.energy,
+                "i:{} s:{:.2} p:({:.2},{:.2}) f:{:.5} v:{:?}: e: {}",
                 self.id,
-                self.attributes.iter().sum::<f64>(),
-                equation_result(&self.attributes),
-                // FIXME: retrieve parameters from config file.
-                fitness(&self, 360.0f64, 0.0001f64),
-                self.attributes,
-                self.n_interactions
-            )
-        }
-    }
-
-    impl std::clone::Clone for Entity {
-        fn clone(&self) -> Self {
-            Entity::new(
-                self.id,
-                self.name.to_string(),
-                self.plasticity,
-                self.influence,
-                self.attributes.to_vec(),
-                self.n_interactions,
+                self.values.iter().sum::<f64>(),
+                self.position.x,
+                self.position.y,
+                fitness(self),
+                self.values,
+                self.energy,
             )
         }
     }
 }
 
 #[cfg(test)]
-mod tests {
-    use crate::entity::entity::Entity;
-
-    #[test]
-    fn test_new() {
-        let entity = Entity::new(
-            12u32,
-            "Hello".to_string(),
-            0.5,
-            2.3,
-            vec![1.0f64, 2.0f64, 3.0f64],
-            0,
-        );
-
-        assert_ne!(entity.to_string(), "".to_string());
-    }
-}
+mod tests {}

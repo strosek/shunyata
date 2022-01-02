@@ -1,370 +1,200 @@
 pub mod universe {
-    use crate::entity::entity::Entity;
-    use crate::math::math::equation_result;
+    extern crate piston_window;
 
+    use piston_window::*;
     use rand::Rng;
-    use std::fs;
-    use std::fs::OpenOptions;
-    use std::io::prelude::*;
-    use std::ops::Index;
-    use std::path::Path;
+    use rayon::prelude::*;
 
-    pub fn solution_difference(success_value: f64, attributes: &Vec<f64>) -> f64 {
-        (success_value - equation_result(attributes)).abs()
+    use crate::entity::entity::{Entity, N_VALUES};
+    use crate::math::math::distance;
+
+    const N_ENTITIES: usize = 5000;
+    const SUCCESS_MARGIN: f64 = 0.00001;
+    const WINDOW_WIDTH: u32 = 1920;
+    const WINDOW_HEIGHT: u32 = 1080;
+
+    pub const UNIVERSE_WIDTH: f64 = (WINDOW_WIDTH * 2) as f64;
+    pub const UNIVERSE_HEIGHT: f64 = (WINDOW_HEIGHT * 2) as f64;
+
+    fn make_similar(current_entity: &mut Entity, other_entity: &Entity) {
+        for i in 0..N_VALUES {
+            if fitness(current_entity) < fitness(other_entity) {
+                if current_entity.values[i] < other_entity.values[i] {
+                    current_entity.values[i] = current_entity.values[i]
+                        + ((other_entity.values[i] - current_entity.values[i]) / 2.0)
+                            / distance(&current_entity.position, &other_entity.position);
+                } else if current_entity.values[i] > other_entity.values[i] {
+                    current_entity.values[i] = current_entity.values[i]
+                        - ((current_entity.values[i] - other_entity.values[i]) / 2.0)
+                            / distance(&current_entity.position, &other_entity.position);
+                }
+            }
+        }
     }
 
-    pub fn fitness(entity: &Entity, success_value: f64, success_margin: f64) -> f64 {
-        let mut fitness = solution_difference(success_value, &entity.attributes) * -1.0f64;
-
-        // Consider a difference very close to 0 as a sufficiently good solution.
-        if fitness >= 0.0f64 - success_margin {
-            fitness += entity.attributes.iter().sum::<f64>();
-        }
-
-        fitness
+    fn move_entity(current_entity: &mut Entity, _state: &[Entity]) {
+        let mut rng = rand::thread_rng();
+        current_entity.position.x += rng.gen_range(-5.0..5.0);
+        current_entity.position.y += rng.gen_range(-5.0..5.0);
     }
 
-    pub struct Universe {
-        // Core data
-        id: String,
-        state: Vec<Entity>,
-        next_state: Vec<Entity>,
+    fn interact(current_entity: &mut Entity, state: &[Entity]) {
+        for other_entity in state {
+            if fitness(other_entity) < -SUCCESS_MARGIN
+                && state[current_entity.id].energy > 0
+                && other_entity.energy > 0
+                && state[current_entity.id].id != other_entity.id
+            {
+                make_similar(current_entity, other_entity);
+                move_entity(current_entity, state);
+            }
+        }
 
-        // Program parameters
-        csv_out: String,
-
-        // Simulation parameters
-        attribute_domain_high: f64,
-        attribute_domain_low: f64,
-        encounters_per_tick_max: usize,
-        encounters_per_tick_min: usize,
-        entities_per_encounter_max: usize,
-        entities_per_encounter_min: usize,
-        favor_integers: bool,
-        n_being_attributes: usize,
-        n_beings: usize,
-        state_dump_frequency: usize,
-        success_margin: f64,
-        success_value: f64,
-        total_cycles: usize,
+        if current_entity.energy > 0 {
+            current_entity.energy -= 1;
+        }
     }
 
-    impl Universe {
-        pub fn new() -> Universe {
-            let id = "somewhere".to_string();
-            let state = Vec::<Entity>::new();
-            let next_state = Vec::<Entity>::new();
-            let csv_out = "shunyata_output.csv".to_string();
-            let attribute_domain_high = 0.0f64;
-            let attribute_domain_low = 100.0f64;
-            let encounters_per_tick_max = 3usize;
-            let encounters_per_tick_min = 1usize;
-            let entities_per_encounter_max = 5usize;
-            let entities_per_encounter_min = 2usize;
-            let favor_integers = false;
-            let n_being_attributes = 3usize;
-            let n_beings = 50usize;
-            let state_dump_frequency = 10_000usize;
-            let success_margin = 0.001f64;
-            let success_value = 666.0f64;
-            let total_cycles = 1_000_000usize;
+    pub fn fitness(entity: &Entity) -> f64 {
+        // Finding values that satisfy the equation:  2*sin(x)^2 + y + 3*z^(1/2) = 666
+        -(((2.0 * entity.values[3].sin()).powi(2)
+            + entity.values[4]
+            + 3.0 * entity.values[5].sqrt())
+            - 666.0)
+            .abs()
+    }
 
-            Universe {
-                id,
-                state,
-                next_state,
-                csv_out,
-                attribute_domain_high,
-                attribute_domain_low,
-                encounters_per_tick_max,
-                encounters_per_tick_min,
-                entities_per_encounter_max,
-                entities_per_encounter_min,
-                favor_integers,
-                n_being_attributes,
-                n_beings,
-                state_dump_frequency,
-                success_margin,
-                success_value,
-                total_cycles,
-            }
+    fn _print_state_random(limit: usize, state: &[Entity]) {
+        println!("State sample ({}):", limit);
+
+        let mut rng = rand::thread_rng();
+        for _ in 0..limit {
+            let index = rng.gen_range(0..state.len());
+            println!("{:?}, ", state[index]);
         }
+    }
 
-        pub fn from_config(config_path: &str) -> Universe {
-            let json_string = fs::read_to_string(config_path).unwrap();
-            let parsed_json = json::parse(json_string.as_str()).unwrap();
-            let universe_values = parsed_json.index("universe");
+    fn print_state_first(limit: usize, state: &[Entity]) {
+        println!("State sample ({}):", limit);
 
-            let id = universe_values.index("id").to_string();
-            let state = Vec::<Entity>::new();
-            let next_state = Vec::<Entity>::new();
-            let csv_out = universe_values.index("csv_output_filename").to_string();
-            let attribute_domain_high = universe_values["attribute_domain_high"].as_f64().unwrap();
-            let attribute_domain_low = universe_values["attribute_domain_low"].as_f64().unwrap();
-            let encounters_per_tick_max = universe_values["encounters_per_tick_max"]
-                .as_usize()
-                .unwrap();
-            let encounters_per_tick_min = universe_values["encounters_per_tick_min"]
-                .as_usize()
-                .unwrap();
-            let entities_per_encounter_max = universe_values["entities_per_encounter_max"]
-                .as_usize()
-                .unwrap();
-            let entities_per_encounter_min = universe_values["entities_per_encounter_min"]
-                .as_usize()
-                .unwrap();
-            let favor_integers = universe_values["favor_integers"].as_bool().unwrap();
-            let n_being_attributes = universe_values["n_being_attributes"].as_usize().unwrap();
-            let n_beings = universe_values["n_beings"].as_usize().unwrap();
-            let state_dump_frequency = universe_values["state_dump_frequency"].as_usize().unwrap();
-            let success_margin = universe_values["success_margin"].as_f64().unwrap();
-            let success_value = universe_values["success_value"].as_f64().unwrap();
-            let total_cycles = universe_values["total_cycles"].as_usize().unwrap();
-
-            Universe {
-                id,
-                state,
-                next_state,
-                csv_out,
-                attribute_domain_high,
-                attribute_domain_low,
-                encounters_per_tick_max,
-                encounters_per_tick_min,
-                entities_per_encounter_max,
-                entities_per_encounter_min,
-                favor_integers,
-                n_being_attributes,
-                n_beings,
-                state_dump_frequency,
-                success_margin,
-                success_value,
-                total_cycles,
-            }
+        for i in 0..limit {
+            println!("{:?}, ", state[i]);
         }
+    }
 
-        pub fn spawn(&mut self) {
-            /* - Initialize all entities according to config file.
-             * - Populate and replicate until n entities randomly or in a specified proportion.
-             * - nextState starts being a copy if current state.
-             */
-            let mut rng = rand::thread_rng();
+    fn count_successful(state: &[Entity]) -> usize {
+        state
+            .par_iter()
+            .filter(|e| fitness(*e) > -SUCCESS_MARGIN)
+            .count()
+    }
 
-            for i in 0..self.n_beings {
-                // TODO: add max and min plasticity and influence as Universe parameters.
-                let plasticity = rng.gen_range(0.0..0.8);
-                let influence = rng.gen_range(1.0..3.0);
-
-                let mut attributes = Vec::<f64>::with_capacity(self.n_being_attributes);
-                for _ in 0..self.n_being_attributes {
-                    attributes
-                        .push(rng.gen_range(self.attribute_domain_low..self.attribute_domain_high));
-                }
-
-                self.state.push(Entity::new(
-                    i as u32,
-                    "entity".to_string(),
-                    plasticity,
-                    influence,
-                    attributes,
-                    0u64,
-                ));
-
-                // Set state and next_state with the same values.
-                self.next_state = self.state.to_vec();
-            }
-
-            self.create_csv();
-
-            println!("Universe: {}", self.id);
-            for i in 0..self.total_cycles {
-                self.tick();
-
-                if i % self.state_dump_frequency == 0 {
-                    println!("Tick no: {}", i);
-                    self.write_csv_line();
-                    self.print_state();
-                }
-            }
-            println!("Tick no: {}", self.total_cycles);
-            self.write_csv_line();
-            self.print_state();
+    fn print_state_successes(limit: usize, state: &[Entity]) {
+        println!("Succeeded entities: {}", count_successful(state));
+        for entity in state
+            .iter()
+            .filter(|e| fitness(*e) > -SUCCESS_MARGIN)
+            .take(limit)
+        {
+            println!("{:?}, ", entity);
         }
+    }
 
-        fn print_state(&self) {
-            let mut successes = 0usize;
-            for entity in &self.state {
-                print!("{}", entity);
-                if fitness(&entity, self.success_value, self.success_margin) >= 0.0f64 {
-                    println!(" - Succeeded!");
-                    successes += 1usize;
-                } else {
-                    println!();
-                }
-            }
-            println!("Successes: {}\n", successes);
+    fn generate_initial_state(n_entities: usize) -> Vec<Entity> {
+        let mut state = Vec::with_capacity(n_entities);
+        for i_entity in 0..n_entities {
+            state.push(Entity::with_id(i_entity));
         }
+        state
+    }
 
-        fn create_csv(&self) {
-            let path = Path::new(self.csv_out.as_str());
+    pub fn run_simulation() {
+        let mut state = generate_initial_state(N_ENTITIES);
+        let mut next_state = state.to_vec();
 
-            OpenOptions::new()
-                .create(true)
-                .write(true)
-                .truncate(true)
-                .open(path)
-                .unwrap();
-        }
+        println!("Processing {} entities", N_ENTITIES);
+        print_state_first(20, &state);
 
-        fn write_csv_line(&self) {
-            let path = Path::new(self.csv_out.as_str());
+        let mut window: PistonWindow = WindowSettings::new(
+            "Shunyata: influence simulator",
+            [WINDOW_WIDTH, WINDOW_HEIGHT],
+        )
+        .exit_on_esc(true)
+        .fullscreen(false)
+        .graphics_api(OpenGL::V3_2)
+        .build()
+        .unwrap();
 
-            let mut file;
-            file = OpenOptions::new()
-                .write(true)
-                .append(true)
-                .open(path)
-                .unwrap();
+        let mut i = 0usize;
 
-            let mut line = String::new();
-            for entity in &self.state {
-                line.push_str(&format!(
-                    "{:.5},",
-                    entity.attributes.iter().product::<f64>()
-                ));
-            }
-            line.push_str("\n");
+        while let Some(event) = window.next() {
+            window.draw_2d(&event, |context, graphics, _device| {
+                clear([0.0, 0.0, 0.0, 1.0], graphics);
 
-            file.write_all(line.as_bytes()).unwrap();
-        }
-
-        fn tick(&mut self) {
-            let interactions = &self.gen_random_interactions();
-            for i in 0..interactions.len() {
-                self.evaluate_interaction(&interactions[i]);
-            }
-
-            self.mutate_entities();
-
-            // TODO: assign the next state with Rayon.
-            self.state = self.next_state.to_vec();
-        }
-
-        fn mutate_entities(&mut self) {
-            let mut rng = rand::thread_rng();
-            let n_mutations = rng.gen_range(0..self.n_beings / 10usize);
-            for _ in 0..n_mutations {
-                let entity_idx = rng.gen_range(0..self.n_beings);
-
-                // Stop mutations if solution is reached.
-                if fitness(
-                    &self.state[entity_idx],
-                    self.success_value,
-                    self.success_margin,
-                ) < 0.0f64
-                {
-                    let attribute_idx = rng.gen_range(0usize..self.n_being_attributes);
-                    self.next_state[entity_idx].attributes[attribute_idx] +=
-                        rng.gen_range(-0.001f64..0.001f64);
-                }
-            }
-        }
-
-        /// Get who interacts with who, randomly.
-        fn gen_random_interactions(&mut self) -> Vec<Vec<usize>> {
-            let mut rng = rand::thread_rng();
-            let mut has_interacted = vec![false; self.n_beings];
-
-            let n_groups =
-                rng.gen_range(self.encounters_per_tick_min..self.encounters_per_tick_max);
-            let mut groups = Vec::<Vec<usize>>::new();
-
-            for _ in 0..n_groups {
-                let n_entities_group = rng.gen_range(
-                    self.entities_per_encounter_min..self.entities_per_encounter_max,
-                );
-
-                let mut encounter = Vec::<usize>::new();
-
-                let mut i_entity = 0usize;
-                while i_entity < n_entities_group {
-                    let entity_index = rng.gen_range(0..self.n_beings);
-                    if has_interacted[entity_index] == false {
-                        encounter.push(entity_index);
-
-                        has_interacted[entity_index] = true;
-                        self.next_state[entity_index].n_interactions += 1u64;
-
-                        i_entity += 1;
-                    }
-                }
-                groups.push(encounter);
-            }
-
-            groups
-        }
-
-        fn evaluate_interaction(&mut self, encounter: &Vec<usize>) {
-            // Build vectors for average and targets.
-            let mut average = vec![0.0f64; self.n_being_attributes];
-            let mut target = vec![0.0f64; self.n_being_attributes];
-
-            // Calculate average of entities that met.
-            for i in 0..self.n_being_attributes {
-                for j in encounter {
-                    average[i] += self.state[*j].attributes[i];
-                    if j == encounter.last().unwrap() {
-                        average[i] /= encounter.len() as f64;
-                    }
-                }
-            }
-
-            // Calculate target value according to each entity's influence factor.
-            for i in 0..self.n_being_attributes {
-                for j in encounter {
-                    if average[i] < self.state[*j].attributes[i] {
-                        target[i] +=
-                            (self.state[*j].attributes[i] - average[i]) * self.state[*j].influence;
-                    } else if average[i] > self.state[*j].attributes[i] {
-                        target[i] -=
-                            (average[i] - self.state[*j].attributes[i]) * self.state[*j].influence;
-                    }
-                }
-            }
-
-            // Make entities similar to target.
-            for i in 0..self.n_being_attributes {
-                for j in encounter {
-                    let target_entity = Entity::new(
-                        u32::MAX,
-                        "target_entity".to_string(),
-                        0.0,
-                        0.0,
-                        target.to_vec(),
-                        0u64,
-                    );
-
-                    // Make entity more similar. Only learn if target is more successful.
-                    let plasticity = self.state[*j].plasticity;
-                    if fitness(&self.state[*j], self.success_value, self.success_margin)
-                        < fitness(&target_entity, self.success_value, self.success_margin)
+                for entity in &state {
+                    if entity.position.x > 0.0
+                        && entity.position.x < WINDOW_WIDTH as f64
+                        && entity.position.y > 0.0
+                        && entity.position.y < WINDOW_HEIGHT as f64
                     {
-                        if self.state[*j].attributes[i] < target[i] {
-                            self.next_state[*j].attributes[i] +=
-                                (target[i] - self.state[*j].attributes[i]) * plasticity;
-                        } else if self.state[*j].attributes[i] > target[i] {
-                            self.next_state[*j].attributes[i] -=
-                                (self.state[*j].attributes[i] - target[i]) * plasticity;
-                        }
-                    }
+                        let alpha = 1.0 / entity.initial_energy as f32 * entity.energy as f32;
+                        circle_arc(
+                            [
+                                entity.values[0] as f32,
+                                entity.values[1] as f32,
+                                entity.values[1] as f32,
+                                alpha,
+                            ],
+                            entity.radius,
+                            0.0,
+                            f64::_360(),
+                            [
+                                entity.position.x.round(),
+                                entity.position.y.round(),
+                                entity.radius * 2.0,
+                                entity.radius * 2.0,
+                            ],
+                            context.transform,
+                            graphics,
+                        );
 
-                    // Round if favoring integers.
-                    let favor_integers = self.favor_integers;
-                    if favor_integers {
-                        self.next_state[*j].attributes[i] =
-                            self.next_state[*j].attributes[i].round();
+                        let remaining_energy =
+                            1.0 / entity.initial_energy as f64 * entity.energy as f64;
+                        circle_arc(
+                            [1.0, 1.0, 1.0, 1.0],
+                            0.5,
+                            0.0,
+                            f64::_360() * remaining_energy,
+                            //f64::_360(),
+                            [
+                                entity.position.x.round(),
+                                entity.position.y.round(),
+                                entity.radius * 2.0,
+                                entity.radius * 2.0,
+                            ],
+                            context.transform,
+                            graphics,
+                        );
                     }
                 }
+            });
+
+            next_state.par_iter_mut().for_each(|entity| {
+                interact(entity, &state);
+            });
+            state = next_state.to_vec();
+
+            i += 1;
+
+            if state.par_iter().all(|e| e.energy <= 0) {
+                println!("All entities died.\n");
+                break;
             }
         }
+
+        println!("Total cycles: {}", i);
+
+        print_state_first(20, &state);
+        print_state_successes(5, &state);
     }
 }
