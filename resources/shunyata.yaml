@@ -1,0 +1,13 @@
+universe:
+  name: Mystery
+  n_entities: 500
+
+entity:
+  values: 5
+  value_max: 9999
+  value_min: -9999
+
+simulation:
+  window_width: 800
+  window_height: 600
+  success_margin: 0.00001

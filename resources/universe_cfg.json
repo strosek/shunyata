@@ -11,7 +11,7 @@
     "success_margin": 0.00001,
     "favor_integers": false,
     "mutation_value": 0.001,
-    "total_cycles": 1000000,
+    "total_cycles": 10000000,
     "state_dump_frequency": 100000,
 
     "encounters_per_tick_min": 2,

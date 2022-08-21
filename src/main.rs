@@ -2,7 +2,7 @@ mod entity;
 mod math;
 mod universe;
 
-pub use universe::universe::run_simulation;
+pub use universe::run_simulation;
 
 fn main() {
     println!("Shunyata: influence simulator");
